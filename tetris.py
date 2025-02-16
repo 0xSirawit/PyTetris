@@ -2,9 +2,11 @@ import numpy as np
 import os
 import time
 import keyboard
+import threading
 
 WIDTH = 10
 HEIGHT = 20
+DROP_INTERVAL = 1
 
 PIECES = {
     'L': [(0, 0), (-1, 0), (1, 0), (1, 1)],
@@ -30,12 +32,22 @@ class Tetromino:
 
 class Board:
     def __init__(self, width=WIDTH, height=HEIGHT):
-        self._board = np.flipud(np.zeros((height, width), dtype=int))
+        self._board = np.zeros((height, width), dtype=int)
         self._width = width
         self._height = height
         self._tetrominos = []
+        self._current_tetromino = Tetromino('J')
+        self._running = True
+        self.spawn_tetromino(self._current_tetromino)
 
-    def place_tetromino(self, tetromino, x=3, y=0):
+        threading.Timer(DROP_INTERVAL, self.start_drop_thread).start()
+
+    def start_drop_thread(self):
+        self.drop_thread = threading.Thread(target=self.drop_tetromino)
+        self.drop_thread.daemon = True
+        self.drop_thread.start()
+
+    def spawn_tetromino(self, tetromino, x=3, y=0):
         piece_grid = tetromino.grid
         h, w = piece_grid.shape
 
@@ -46,8 +58,8 @@ class Board:
                     board_x = x + j
                     if 0 <= board_y < self._height and 0 <= board_x < self._width:
                         tetromino.current_each_tile_pos.append((board_y, board_x))
-                        
-        self._tetrominos.append(tetromino)
+
+        self._tetrominos.append(self._current_tetromino)               
         self.render()
 
     def move_tetromino(self, tetromino, direction):
@@ -65,9 +77,10 @@ class Board:
 
         if all(0 <= pos[1] < self._width for pos in new_pos):
             tetromino.current_each_tile_pos = new_pos
-        
-        self.render()
 
+        self.check_tetromino()
+        self.render()
+        
     def render(self):
         self._board = np.zeros((self._height, self._width), dtype=int)
         for piece in self._tetrominos:
@@ -82,21 +95,35 @@ class Board:
             print("".join(["1" if cell else "0" for cell in row]))
 
         print(flush=True)
+    
+    def check_tetromino(self):
+        for tile in self._current_tetromino.current_each_tile_pos:
+            if tile[0] == (self._height - 1) :
+                self._current_tetromino.is_set = True
+                self._current_tetromino = Tetromino('L')
+                self.spawn_tetromino(self._current_tetromino)
+                break
+
+    def drop_tetromino(self):
+        while self._running:
+            self.move_tetromino(self._current_tetromino, 'down')
+            time.sleep(DROP_INTERVAL)
+
+    def stop(self):
+        self._running = False
 
 def play_tetris():
     os.system("cls" if os.name == "nt" else "clear")
     board = Board()
-    tetromino = Tetromino('J')
-    board.place_tetromino(tetromino)
     
     while True:
         board.display()
         if keyboard.is_pressed('a'):
-            board.move_tetromino(tetromino, 'left')
+            board.move_tetromino(board._current_tetromino, 'left')
         if keyboard.is_pressed('d'):
-            board.move_tetromino(tetromino, 'right')
+            board.move_tetromino(board._current_tetromino, 'right')
         if keyboard.is_pressed('s'):
-            board.move_tetromino(tetromino, 'down')
+            board.move_tetromino(board._current_tetromino, 'down')
         time.sleep(0.1)
 
 if __name__ == "__main__":
