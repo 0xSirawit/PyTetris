@@ -17,6 +17,8 @@ PIECES = {
     'J': [(0, 0), (-1, 0), (-1, 1), (1, 0)],
 }
 
+PIECES_INDEX = {piece: index for index, piece in enumerate(PIECES.keys(), start=1)}
+
 class Bag:
     def __init__(self):
         self._choices = list(PIECES.keys())
@@ -54,6 +56,10 @@ class Tetromino:
         for codinate in condinate_piece:
             condinate_map[codinate[1] + 1, codinate[0] + 1] = 1
         return np.flipud(condinate_map)
+    
+    @property
+    def piece_type(self):
+        return self._piece_type
 
 class Board:
     def __init__(self, width=WIDTH, height=HEIGHT):
@@ -111,14 +117,14 @@ class Board:
         self._board = np.zeros((self._height, self._width), dtype=int)
         for piece in self._tetrominos:
             for tile in piece.current_each_tile_pos:
-                self._board[tile[0], tile[1]] = 1
+                self._board[tile[0], tile[1]] = PIECES_INDEX[piece.piece_type]
 
     def display(self):
         print("\033[?25l", end="")
         print("\033[H", end="")
 
         for row in self._board:
-            print("".join(["1" if cell else "0" for cell in row]))
+            print("".join([str(cell) if cell else "." for cell in row]))
 
         print(flush=True)
     
