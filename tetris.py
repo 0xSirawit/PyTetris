@@ -2,9 +2,11 @@ import numpy as np
 import os
 import time
 import keyboard
+import threading
 
 WIDTH = 10
 HEIGHT = 20
+DROP_INTERVAL = 1
 
 PIECES = {
     'L': [(0, 0), (-1, 0), (1, 0), (1, 1)],
@@ -35,8 +37,15 @@ class Board:
         self._height = height
         self._tetrominos = []
         self._current_tetromino = Tetromino('J')
+        self._running = True
         self.spawn_tetromino(self._current_tetromino)
-        
+
+        threading.Timer(DROP_INTERVAL, self.start_drop_thread).start()
+
+    def start_drop_thread(self):
+        self.drop_thread = threading.Thread(target=self.drop_tetromino)
+        self.drop_thread.daemon = True
+        self.drop_thread.start()
 
     def spawn_tetromino(self, tetromino, x=3, y=0):
         piece_grid = tetromino.grid
@@ -85,9 +94,6 @@ class Board:
         for row in self._board:
             print("".join(["1" if cell else "0" for cell in row]))
 
-        for tile in self._current_tetromino.current_each_tile_pos:
-            print(tile) 
-        print(len(self._tetrominos))
         print(flush=True)
     
     def check_tetromino(self):
@@ -97,7 +103,14 @@ class Board:
                 self._current_tetromino = Tetromino('L')
                 self.spawn_tetromino(self._current_tetromino)
                 break
-       
+
+    def drop_tetromino(self):
+        while self._running:
+            self.move_tetromino(self._current_tetromino, 'down')
+            time.sleep(DROP_INTERVAL)
+
+    def stop(self):
+        self._running = False
 
 def play_tetris():
     os.system("cls" if os.name == "nt" else "clear")
