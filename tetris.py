@@ -3,6 +3,7 @@ import os
 import time
 import keyboard
 import threading
+import random
 
 WIDTH = 10
 HEIGHT = 20
@@ -15,6 +16,30 @@ PIECES = {
     'T': [(0, 0), (-1, 0), (0, 1), (1, 0)],
     'J': [(0, 0), (-1, 0), (-1, 1), (1, 0)],
 }
+
+class Bag:
+    def __init__(self):
+        self._choices = list(PIECES.keys())
+        self._index = 0
+        self._random_pieces = []
+        self.random_pieces()
+    
+    def random_pieces(self):
+        self._index = 0
+        self._random_pieces = []
+        for _ in range(len(PIECES)):
+            choose_piece = random.choice(self._choices)
+            self._choices.remove(choose_piece)
+            self._random_pieces.append(choose_piece) 
+        self._choices = list(PIECES.keys())
+
+    def choose(self):
+        choose_piece = self._random_pieces[self._index]
+        self._index += 1
+        if self._index == len(self._choices):
+            self.random_pieces()
+
+        return choose_piece
 
 class Tetromino:
     def __init__(self, piece_type):
@@ -36,7 +61,8 @@ class Board:
         self._width = width
         self._height = height
         self._tetrominos = []
-        self._current_tetromino = Tetromino('J')
+        self._bag = Bag()
+        self._current_tetromino = Tetromino(self._bag.choose())
         self._running = True
         self.spawn_tetromino(self._current_tetromino)
 
@@ -100,7 +126,7 @@ class Board:
         for tile in self._current_tetromino.current_each_tile_pos:
             if tile[0] == (self._height - 1) :
                 self._current_tetromino.is_set = True
-                self._current_tetromino = Tetromino('L')
+                self._current_tetromino = Tetromino(self._bag.choose())
                 self.spawn_tetromino(self._current_tetromino)
                 break
 
