@@ -23,8 +23,13 @@ class Tetromino:
         self.is_set = False
 
     def generate(self):
-        condinate_piece = PIECES[self._piece_type]
-        condinate_map = np.zeros((3, 3), dtype=int)
+        if self._piece_type == "I":
+            condinate_piece = PIECES[self._piece_type]
+            condinate_map = np.zeros((4, 4), dtype=int)
+        else:
+            condinate_piece = PIECES[self._piece_type]
+            condinate_map = np.zeros((3, 3), dtype=int)
+
         for codinate in condinate_piece:
             condinate_map[codinate[1] + 1, codinate[0] + 1] = 1
         return np.flipud(condinate_map)
@@ -87,7 +92,7 @@ class Board:
 def play_tetris():
     os.system("cls" if os.name == "nt" else "clear")
     board = Board()
-    tetromino = Tetromino('J')
+    tetromino = Tetromino('I')
     board.place_tetromino(tetromino)
     
     while True:
