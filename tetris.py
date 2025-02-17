@@ -78,9 +78,9 @@ class Board:
         threading.Timer(DROP_INTERVAL, self.start_drop_thread).start()
 
     def start_drop_thread(self):
-        self.drop_thread = threading.Thread(target=self.drop_tetromino)
-        self.drop_thread.daemon = True
-        self.drop_thread.start()
+        self.drop_thread = threading.Thread(
+            target=self.drop_tetromino, daemon=True
+        ).start()
 
     def spawn_tetromino(self, tetromino, x=3, y=0):
         piece_grid = tetromino.grid
@@ -123,6 +123,19 @@ class Board:
             if tile[0] == (self._height - 1):
                 self.respawn_tetromino()
                 break
+            if (
+                tile[0] + 1,
+                tile[1],
+            ) not in self._current_tetromino.current_each_tile_pos and (
+                tile[0] + 1,
+                tile[1] + 1,
+            ) not in self._current_tetromino.current_each_tile_pos and (
+                tile[0] + 1,
+                tile[1] - 1,
+            ) not in self._current_tetromino.current_each_tile_pos:
+                if self._board[tile[0] + 1, tile[1]] != 0:
+                    self.respawn_tetromino()
+                    break
 
     def render(self):
         self._board = np.zeros((self._height, self._width), dtype=int)
