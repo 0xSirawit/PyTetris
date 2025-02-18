@@ -12,6 +12,7 @@ PIECES = {
     'Z': [(0, 0), (-1, 1), (0, 1), (1, 0)],
     'T': [(0, 0), (-1, 0), (0, 1), (1, 0)],
     'J': [(0, 0), (-1, 0), (-1, 1), (1, 0)],
+    'O': [(0, 0), (0, 1), (1, 0), (1, 1)],
     'I': [(0, 0), (-1, 0), (1, 0), (2, 0)]
 }
 
@@ -23,16 +24,18 @@ class Tetromino:
         self.is_set = False
 
     def generate(self):
-        if self._piece_type == "I":
-            condinate_piece = PIECES[self._piece_type]
-            condinate_map = np.zeros((4, 4), dtype=int)
-        else:
-            condinate_piece = PIECES[self._piece_type]
-            condinate_map = np.zeros((3, 3), dtype=int)
+        size = 4 if self._piece_type == "I" else 3
+        coordinate_map = np.zeros((size, size), dtype=int)
 
-        for codinate in condinate_piece:
-            condinate_map[codinate[1] + 1, codinate[0] + 1] = 1
-        return np.flipud(condinate_map)
+        for coordinate in PIECES[self._piece_type]:
+                x, y = coordinate
+                if self._piece_type == "I":
+                    coordinate_map[y+2, x] = 1
+                else:
+                    coordinate_map[y + 1, x + 1] = 1  
+
+        return np.flipud(coordinate_map)  
+
 
 class Board:
     def __init__(self, width=WIDTH, height=HEIGHT):
@@ -92,7 +95,7 @@ class Board:
 def play_tetris():
     os.system("cls" if os.name == "nt" else "clear")
     board = Board()
-    tetromino = Tetromino('I')
+    tetromino = Tetromino("I")
     board.place_tetromino(tetromino)
     
     while True:
