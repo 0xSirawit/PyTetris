@@ -15,6 +15,8 @@ PIECES = {
     "Z": [(0, 0), (-1, 1), (0, 1), (1, 0)],
     "T": [(0, 0), (-1, 0), (0, 1), (1, 0)],
     "J": [(0, 0), (-1, 0), (-1, 1), (1, 0)],
+    "O": [(0, 0), (0, 1), (1, 0), (1, 1)],
+    "I": [(0, 0), (-1, 0), (1, 0), (2, 0)],
 }
 
 PIECES_INDEX = {piece: index for index, piece in enumerate(PIECES.keys(), start=1)}
@@ -53,11 +55,17 @@ class Tetromino:
         self.is_set = False
 
     def generate(self):
-        condinate_piece = PIECES[self._piece_type]
-        condinate_map = np.zeros((3, 3), dtype=int)
-        for codinate in condinate_piece:
-            condinate_map[codinate[1] + 1, codinate[0] + 1] = 1
-        return np.flipud(condinate_map)
+        size = 4 if self._piece_type == "I" else 3
+        coordinate_map = np.zeros((size, size), dtype=int)
+
+        for coordinate in PIECES[self._piece_type]:
+            x, y = coordinate
+            if self._piece_type == "I":
+                coordinate_map[y + 2, x] = 1
+            else:
+                coordinate_map[y + 1, x + 1] = 1
+
+        return np.flipud(coordinate_map)
 
     @property
     def piece_type(self):
@@ -89,7 +97,7 @@ class Board:
         for i in range(h):
             for j in range(w):
                 if piece_grid[i, j] == 1:
-                    board_y = y + i
+                    board_y = y + i if tetromino.piece_type != "I" else (y - 1) + i
                     board_x = x + j
                     if 0 <= board_y < self._height and 0 <= board_x < self._width:
                         tetromino.current_each_tile_pos.append((board_y, board_x))
@@ -124,15 +132,22 @@ class Board:
                 self.respawn_tetromino()
                 break
             if (
-                tile[0] + 1,
-                tile[1],
-            ) not in self._current_tetromino.current_each_tile_pos and (
-                tile[0] + 1,
-                tile[1] + 1,
-            ) not in self._current_tetromino.current_each_tile_pos and (
-                tile[0] + 1,
-                tile[1] - 1,
-            ) not in self._current_tetromino.current_each_tile_pos:
+                (
+                    tile[0] + 1,
+                    tile[1],
+                )
+                not in self._current_tetromino.current_each_tile_pos
+                and (
+                    tile[0] + 1,
+                    tile[1] + 1,
+                )
+                not in self._current_tetromino.current_each_tile_pos
+                and (
+                    tile[0] + 1,
+                    tile[1] - 1,
+                )
+                not in self._current_tetromino.current_each_tile_pos
+            ):
                 if self._board[tile[0] + 1, tile[1]] != 0:
                     self.respawn_tetromino()
                     break
