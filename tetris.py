@@ -239,9 +239,9 @@ def play_tetris():
             board.move_tetromino(board._current_tetromino, "right")
         if keyboard.is_pressed("s"):
             board.move_tetromino(board._current_tetromino, "down")
-        if keyboard.is_pressed("k"):
+        if keyboard.is_pressed("right"):
             board.rotate_tetromino("rotate-right")
-        if keyboard.is_pressed("j"):
+        if keyboard.is_pressed("left"):
             board.rotate_tetromino("rotate-left")
         time.sleep(0.05)
 
