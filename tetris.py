@@ -36,6 +36,17 @@ OFFSET_JLSTZ = {
     "0>3": [(0, 0), (1, 0), (1, 1), (0, -2), (1, -2)],
 }
 
+OFFSET_I = {
+    "0>1": [(0, 0), (-2, 0), (1, 0), (-2, -1), (1, 2)],
+    "1>0": [(0, 0), (2, 0), (-1, 0), (2, 1), (-1, -2)],
+    "1>2": [(0, 0), (-1, 0), (2, 0), (-1, 2), (2, -1)],
+    "2>1": [(0, 0), (1, 0), (-2, 0), (1, -2), (-2, 1)],
+    "2>3": [(0, 0), (2, 0), (-1, 0), (2, 1), (-1, -2)],
+    "3>2": [(0, 0), (-2, 0), (1, 0), (-2, -1), (1, 2)],
+    "3>0": [(0, 0), (1, 0), (-2, 0), (1, -2), (-2, 1)],
+    "0>3": [(0, 0), (-1, 0), (2, 0), (-1, 2), (2, -1)],
+}
+
 
 class Bag:
     def __init__(self):
@@ -89,23 +100,29 @@ class Tetromino:
         elif direction == "rotate-left":
             next_rotate_pos = (self.rotate_pos - 1) % 4
 
-        if self._piece_type != "I":
+        if self._piece_type == "I":
+            offset_data = OFFSET_I[f"{self.rotate_pos}>{next_rotate_pos}"]
+        else:
             offset_data = OFFSET_JLSTZ[f"{self.rotate_pos}>{next_rotate_pos}"]
-            for offset_x, offset_y in offset_data:
-                is_valid_rotate = True
-                for new_tile in new_pos:
-                    next_x = new_tile[1] + offset_x
-                    next_y = new_tile[0] + offset_y
-                    if 0 <= next_x < WIDTH and 0 <= next_y < HEIGHT:
-                        if board[next_y, next_x] != 0 and (next_y, next_x) not in self.current_each_tile_pos:
-                            is_valid_rotate = False
-                            break
-                    else:
+        for offset_x, offset_y in offset_data:
+            is_valid_rotate = True
+            for new_tile in new_pos:
+                next_x = new_tile[1] + offset_x
+                next_y = new_tile[0] + offset_y
+                if 0 <= next_x < WIDTH and 0 <= next_y < HEIGHT:
+                    if (
+                        board[next_y, next_x] != 0
+                        and (next_y, next_x) not in self.current_each_tile_pos
+                    ):
                         is_valid_rotate = False
                         break
-                if is_valid_rotate:
-                    self.rotate_pos = next_rotate_pos
-                    return (offset_x, offset_y)
+                else:
+                    is_valid_rotate = False
+                    break
+            if is_valid_rotate:
+                self.rotate_pos = next_rotate_pos
+                return (offset_x, offset_y)
+
         return False
 
     def rotate(self, board, direction):
@@ -134,8 +151,13 @@ class Tetromino:
 
         offset = self.rotate_offset(board, direction, new_pos)
         if offset:
-            self.current_each_tile_pos = [(y + offset[1], x + offset[0]) for (y, x) in new_pos]
-            self.rotate_point = (self.rotate_point[0] + offset[1], self.rotate_point[1] + offset[0])
+            self.current_each_tile_pos = [
+                (y + offset[1], x + offset[0]) for (y, x) in new_pos
+            ]
+            self.rotate_point = (
+                self.rotate_point[0] + offset[1],
+                self.rotate_point[1] + offset[0],
+            )
 
     @property
     def piece_type(self):
@@ -268,7 +290,7 @@ class Board:
         self._running = False
 
     def rotate_tetromino(self, direction):
-        self._current_tetromino.rotate(self._board,direction)
+        self._current_tetromino.rotate(self._board, direction)
         self.render()
 
 
