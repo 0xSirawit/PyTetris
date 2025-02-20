@@ -176,7 +176,7 @@ class Board:
         if not lines_to_clear:
             return False
 
-        for line_to_clear in sorted(lines_to_clear, reverse=True):
+        for line_to_clear in sorted(lines_to_clear):
             self._board[line_to_clear] = [CLEARLINE_NUM] * self._width
             self.display()
             for tetromino in self._tetrominos:
