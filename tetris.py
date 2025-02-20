@@ -153,7 +153,7 @@ class Board:
         self._running = True
         self.spawn_tetromino(self._current_tetromino)
 
-        # threading.Timer(DROP_INTERVAL, self.start_drop_thread).start()
+        threading.Timer(DROP_INTERVAL, self.start_drop_thread).start()
 
     def start_drop_thread(self):
         self.drop_thread = threading.Thread(
