@@ -9,7 +9,7 @@ WIDTH = 10
 HEIGHT = 20
 DROP_INTERVAL = 1
 CLEARLINE_NUM = 9
-COOLDOWN = 0.5
+
 PIECES = {
     "L": [(0, 0), (-1, 0), (1, 0), (1, 1)],
     "S": [(0, 0), (-1, 0), (0, 1), (1, 1)],
@@ -132,7 +132,6 @@ class Board:
         ):
             tetromino.current_each_tile_pos = new_positions
 
-        self.clear_line()
         self.render()
 
     def clear_line(self):
@@ -159,9 +158,9 @@ class Board:
                             else:
                                 new_tile.append((y, x))
                     tetromino.current_each_tile_pos = new_tile
-        self._running = False
-        time.sleep(COOLDOWN)
-        self._running = True
+
+        time.sleep(DROP_INTERVAL)
+        return
 
     def render(self):
         self._board = np.zeros((self._height, self._width), dtype=int)
@@ -179,12 +178,14 @@ class Board:
 
     def respawn_tetromino(self):
         self._current_tetromino.is_set = True
+        self.clear_line()
         self._current_tetromino = Tetromino(self._bag.choose())
         self.spawn_tetromino(self._current_tetromino)
 
     def drop_tetromino(self):
         while self._running:
-            self.move_tetromino(self._current_tetromino, "down")
+            if not self._current_tetromino.is_set:
+                self.move_tetromino(self._current_tetromino, "down")
             time.sleep(DROP_INTERVAL)
 
     def stop(self):
