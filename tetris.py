@@ -22,6 +22,31 @@ PIECES = {
 
 PIECES_INDEX = {piece: index for index, piece in enumerate(PIECES.keys(), start=1)}
 
+CW = [[0, 1], [-1, 0]]
+CCW = [[0, -1], [1, 0]]
+
+OFFSET_JLSTZ = {
+    "0>1": [(0, 0), (-1, 0), (-1, 1), (0, -2), (-1, -2)],
+    "1>0": [(0, 0), (1, 0), (1, -1), (0, 2), (1, 2)],
+    "1>2": [(0, 0), (1, 0), (1, -1), (0, 2), (1, 2)],
+    "2>1": [(0, 0), (-1, 0), (-1, 1), (0, -2), (-1, -2)],
+    "2>3": [(0, 0), (1, 0), (1, 1), (0, -2), (1, -2)],
+    "3>2": [(0, 0), (-1, 0), (-1, -1), (0, 2), (-1, 2)],
+    "3>0": [(0, 0), (-1, 0), (-1, -1), (0, 2), (-1, 2)],
+    "0>3": [(0, 0), (1, 0), (1, 1), (0, -2), (1, -2)],
+}
+
+OFFSET_I = {
+    "0>1": [(0, 0), (-2, 0), (1, 0), (-2, -1), (1, 2)],
+    "1>0": [(0, 0), (2, 0), (-1, 0), (2, 1), (-1, -2)],
+    "1>2": [(0, 0), (-1, 0), (2, 0), (-1, 2), (2, -1)],
+    "2>1": [(0, 0), (1, 0), (-2, 0), (1, -2), (-2, 1)],
+    "2>3": [(0, 0), (2, 0), (-1, 0), (2, 1), (-1, -2)],
+    "3>2": [(0, 0), (-2, 0), (1, 0), (-2, -1), (1, 2)],
+    "3>0": [(0, 0), (1, 0), (-2, 0), (1, -2), (-2, 1)],
+    "0>3": [(0, 0), (-1, 0), (2, 0), (-1, 2), (2, -1)],
+}
+
 
 class Bag:
     def __init__(self):
@@ -44,7 +69,6 @@ class Bag:
         self._index += 1
         if self._index == len(self._choices):
             self.random_pieces()
-
         return choose_piece
 
 
@@ -54,6 +78,8 @@ class Tetromino:
         self.grid = self.generate()
         self.current_each_tile_pos = []
         self.is_set = False
+        self.rotate_pos = 0
+        self.rotate_point = None
 
     def generate(self):
         size = 4 if self._piece_type == "I" else 3
@@ -67,6 +93,71 @@ class Tetromino:
                 coordinate_map[y + 1, x + 1] = 1
 
         return np.flipud(coordinate_map)
+
+    def rotate_offset(self, board, direction, new_pos):
+        if direction == "rotate-right":
+            next_rotate_pos = (self.rotate_pos + 1) % 4
+        elif direction == "rotate-left":
+            next_rotate_pos = (self.rotate_pos - 1) % 4
+
+        if self._piece_type == "I":
+            offset_data = OFFSET_I[f"{self.rotate_pos}>{next_rotate_pos}"]
+        else:
+            offset_data = OFFSET_JLSTZ[f"{self.rotate_pos}>{next_rotate_pos}"]
+        for offset_x, offset_y in offset_data:
+            is_valid_rotate = True
+            for new_tile in new_pos:
+                next_x = new_tile[1] + offset_x
+                next_y = new_tile[0] + offset_y
+                if 0 <= next_x < WIDTH and 0 <= next_y < HEIGHT:
+                    if (
+                        board[next_y, next_x] != 0
+                        and (next_y, next_x) not in self.current_each_tile_pos
+                    ):
+                        is_valid_rotate = False
+                        break
+                else:
+                    is_valid_rotate = False
+                    break
+            if is_valid_rotate:
+                self.rotate_pos = next_rotate_pos
+                return (offset_x, offset_y)
+
+        return False
+
+    def rotate(self, board, direction):
+        if self._piece_type == "O":
+            return
+        new_pos = []
+        rotation_point = self.rotate_point
+
+        for y, x in self.current_each_tile_pos:
+            con_x = x - rotation_point[1]
+            con_y = y - rotation_point[0]
+            if direction == "rotate-right":
+                con_pos = np.dot(CW, [con_x, con_y])
+                final_pos = (
+                    rotation_point[0] - int(con_pos[1]),
+                    rotation_point[1] - int(con_pos[0]),
+                )
+                new_pos.append(final_pos)
+            elif direction == "rotate-left":
+                con_pos = np.dot(CCW, [con_x, con_y])
+                final_pos = (
+                    rotation_point[0] - int(con_pos[1]),
+                    rotation_point[1] - int(con_pos[0]),
+                )
+                new_pos.append(final_pos)
+
+        offset = self.rotate_offset(board, direction, new_pos)
+        if offset:
+            self.current_each_tile_pos = [
+                (y + offset[1], x + offset[0]) for (y, x) in new_pos
+            ]
+            self.rotate_point = (
+                self.rotate_point[0] + offset[1],
+                self.rotate_point[1] + offset[0],
+            )
 
     @property
     def piece_type(self):
@@ -101,6 +192,8 @@ class Board:
                     board_y = y + i if tetromino.piece_type != "I" else (y - 1) + i
                     board_x = x + j
                     if 0 <= board_y < self._height and 0 <= board_x < self._width:
+                        if [i, j] == [1, 1]:
+                            tetromino.rotate_point = (board_y, board_x)
                         tetromino.current_each_tile_pos.append((board_y, board_x))
 
         self._tetrominos.append(self._current_tetromino)
@@ -125,12 +218,17 @@ class Board:
         direction_map = {"right": (0, 1), "left": (0, -1), "down": (1, 0)}
 
         dx, dy = direction_map[direction]
-        new_positions = [(x + dx, y + dy) for x, y in tetromino.current_each_tile_pos]
+        new_positions = []
+        for x, y in tetromino.current_each_tile_pos:
+            new_positions.append((x + dx, y + dy))
+            if (x, y) == tetromino.rotate_point:
+                new_rotate_point = (x + dx, y + dy)
 
         if self.check_tetromino(
             new_positions, tetromino.current_each_tile_pos, direction
         ):
             tetromino.current_each_tile_pos = new_positions
+            tetromino.rotate_point = new_rotate_point
 
         self.render()
 
@@ -145,7 +243,7 @@ class Board:
         if not lines_to_clear:
             return False
 
-        for line_to_clear in sorted(lines_to_clear, reverse=True):
+        for line_to_clear in sorted(lines_to_clear):
             self._board[line_to_clear] = [CLEARLINE_NUM] * self._width
             self.display()
             for tetromino in self._tetrominos:
@@ -191,6 +289,10 @@ class Board:
     def stop(self):
         self._running = False
 
+    def rotate_tetromino(self, direction):
+        self._current_tetromino.rotate(self._board, direction)
+        self.render()
+
 
 def play_tetris():
     os.system("cls" if os.name == "nt" else "clear")
@@ -202,8 +304,12 @@ def play_tetris():
             board.move_tetromino(board._current_tetromino, "left")
         if keyboard.is_pressed("d"):
             board.move_tetromino(board._current_tetromino, "right")
-        if keyboard.is_pressed("s"):
+        if keyboard.is_pressed("w"):
             board.move_tetromino(board._current_tetromino, "down")
+        if keyboard.is_pressed("right"):
+            board.rotate_tetromino("rotate-right")
+        if keyboard.is_pressed("left"):
+            board.rotate_tetromino("rotate-left")
         time.sleep(0.05)
 
 
