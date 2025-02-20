@@ -108,7 +108,7 @@ class Board:
         self._running = True
         self.spawn_tetromino(self._current_tetromino)
 
-        # threading.Timer(DROP_INTERVAL, self.start_drop_thread).start()
+        threading.Timer(DROP_INTERVAL, self.start_drop_thread).start()
 
     def start_drop_thread(self):
         self.drop_thread = threading.Thread(
@@ -126,7 +126,7 @@ class Board:
                     board_x = x + j
                     if 0 <= board_y < self._height and 0 <= board_x < self._width:
                         if [i, j] == [1,1]:
-                            tetromino.rotate_point = [board_y, board_x]
+                            tetromino.rotate_point = (board_y, board_x)
                         tetromino.current_each_tile_pos.append((board_y, board_x))
         
         self._tetrominos.append(self._current_tetromino)
@@ -151,12 +151,17 @@ class Board:
         direction_map = {"right": (0, 1), "left": (0, -1), "down": (1, 0)}
 
         dx, dy = direction_map[direction]
-        new_positions = [(x + dx, y + dy) for x, y in tetromino.current_each_tile_pos]
+        new_positions = []
+        for x, y in tetromino.current_each_tile_pos:
+            new_positions.append((x + dx, y + dy))
+            if (x, y) == tetromino.rotate_point:
+                new_rotate_point = (x + dx, y + dy)
 
         if self.check_tetromino(
             new_positions, tetromino.current_each_tile_pos, direction
         ):
             tetromino.current_each_tile_pos = new_positions
+            tetromino.rotate_point = new_rotate_point
 
         self.render()
 
@@ -218,7 +223,7 @@ class Board:
         self._running = False
 
     def rotate_tetromino(self, direction):
-        self._current_tetromino.rotate(self, direction)
+        self._current_tetromino.rotate(direction)
         self.render()
 
 
