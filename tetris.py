@@ -65,26 +65,32 @@ class Tetromino:
         return np.flipud(coordinate_map)
 
     def rotate(self, board, direction):
-        new_grid = np.rot90(self.grid, -1 if direction == "rotate-right" else 1)
+        
         new_positions = []
+        rotation_point = self.current_each_tile_pos[0]
+        print(self.current_each_tile_pos)
 
-        # หาจุดหมุนตามที่กำหนดในรูป
-        rotation_point = self.current_each_tile_pos[0] 
         for x, y in self.current_each_tile_pos:
             if PIECES[self._piece_type].count((x - rotation_point[0], y - rotation_point[1])):
                 rotation_point = (x, y)
                 break
 
-        for i in range(new_grid.shape[0]):
-            for j in range(new_grid.shape[1]):
-                if new_grid[i, j] == 1:
-                    new_x = rotation_point[0] + (i - 1)  
-                    new_y = rotation_point[1] + (j - 1)
-                    new_positions.append((new_x, new_y))
+        for x, y in self.current_each_tile_pos:
+            dx = x - rotation_point[0]
+            dy = y - rotation_point[1]
+            
+            if direction == "rotate-right":
+                new_x = rotation_point[0] - dy
+                new_y = rotation_point[1] + dx
+            else:
+                new_x = rotation_point[0] + dy
+                new_y = rotation_point[1] - dx
+            
+            new_positions.append((new_x, new_y))
 
         if board.is_valid_move(new_positions, self.current_each_tile_pos):
             self.current_each_tile_pos = new_positions
-            self.grid = new_grid
+
 
     @property
     def piece_type(self):
@@ -101,10 +107,10 @@ class Board:
         self._running = True
         self.spawn_tetromino(self._current_tetromino)
 
-        threading.Timer(DROP_INTERVAL, self.start_drop_thread).start()
+        # threading.Timer(DROP_INTERVAL, self.start_drop_thread).start()
 
     def start_drop_thread(self):
-        self.drop_thread = threading.Thread(
+        self.drop_thread = threading.Thread(    
             target=self.drop_tetromino, daemon=True
         ).start()
 
