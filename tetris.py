@@ -298,18 +298,32 @@ def play_tetris():
     os.system("cls" if os.name == "nt" else "clear")
     board = Board()
 
+    last_keys = set()  # Store previously pressed keys
+
     while True:
         board.display()
+        current_keys = set()
+
         if keyboard.is_pressed("a"):
             board.move_tetromino(board._current_tetromino, "left")
+
         if keyboard.is_pressed("d"):
             board.move_tetromino(board._current_tetromino, "right")
+
         if keyboard.is_pressed("w"):
             board.move_tetromino(board._current_tetromino, "down")
+
         if keyboard.is_pressed("right"):
-            board.rotate_tetromino("rotate-right")
+            current_keys.add("right")
+            if "right" not in last_keys:
+                board.rotate_tetromino("rotate-right")
+
         if keyboard.is_pressed("left"):
-            board.rotate_tetromino("rotate-left")
+            current_keys.add("left")
+            if "left" not in last_keys:
+                board.rotate_tetromino("rotate-left")
+
+        last_keys = current_keys
         time.sleep(0.05)
 
 
