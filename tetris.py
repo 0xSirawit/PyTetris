@@ -8,7 +8,8 @@ import random
 WIDTH = 10
 HEIGHT = 20
 DROP_INTERVAL = 1
-
+CLEARLINE_NUM = 9
+COOLDOWN = 0.5
 PIECES = {
     "L": [(0, 0), (-1, 0), (1, 0), (1, 1)],
     "S": [(0, 0), (-1, 0), (0, 1), (1, 1)],
@@ -105,12 +106,18 @@ class Board:
         self._tetrominos.append(self._current_tetromino)
         self.render()
 
-    def is_valid_move(self, new_positions, current_positions):
-        for x, y in new_positions:
-            if (x, y) not in current_positions:
-                if not (0 <= x < self._height and 0 <= y < self._width):
+    def check_tetromino(self, new_positions, current_positions, direction):
+        for y, x in new_positions:
+            if (y, x) not in current_positions:
+                if y >= self._height:
+                    self.respawn_tetromino()
                     return False
-                if self._board[x, y] != 0:
+                if not (0 <= y < self._height and 0 <= x < self._width):
+                    return False
+                if y < self._height and direction == "down" and self._board[y, x] != 0:
+                    self.respawn_tetromino()
+                    return False
+                if self._board[y, x] != 0:
                     return False
         return True
 
@@ -120,37 +127,41 @@ class Board:
         dx, dy = direction_map[direction]
         new_positions = [(x + dx, y + dy) for x, y in tetromino.current_each_tile_pos]
 
-        if self.is_valid_move(new_positions, tetromino.current_each_tile_pos):
+        if self.check_tetromino(
+            new_positions, tetromino.current_each_tile_pos, direction
+        ):
             tetromino.current_each_tile_pos = new_positions
 
-        self.check_tetromino()
+        self.clear_line()
         self.render()
 
-    def check_tetromino(self):
-        for tile in self._current_tetromino.current_each_tile_pos:
-            if tile[0] == (self._height - 1):
-                self.respawn_tetromino()
-                break
-            if (
-                (
-                    tile[0] + 1,
-                    tile[1],
-                )
-                not in self._current_tetromino.current_each_tile_pos
-                and (
-                    tile[0] + 1,
-                    tile[1] + 1,
-                )
-                not in self._current_tetromino.current_each_tile_pos
-                and (
-                    tile[0] + 1,
-                    tile[1] - 1,
-                )
-                not in self._current_tetromino.current_each_tile_pos
-            ):
-                if self._board[tile[0] + 1, tile[1]] != 0:
-                    self.respawn_tetromino()
-                    break
+    def clear_line(self):
+        stat = {i: 0 for i in range(20)}
+        for tetromino in self._tetrominos:
+            if tetromino.is_set == True:
+                for y, x in tetromino.current_each_tile_pos:
+                    stat[y] += 1
+
+        lines_to_clear = [y for y in stat.keys() if stat[y] == 10]
+        if not lines_to_clear:
+            return False
+
+        for line_to_clear in sorted(lines_to_clear, reverse=True):
+            self._board[line_to_clear] = [CLEARLINE_NUM] * self._width
+            self.display()
+            for tetromino in self._tetrominos:
+                if tetromino.is_set == True:
+                    new_tile = []
+                    for y, x in tetromino.current_each_tile_pos:
+                        if y != line_to_clear:
+                            if y < line_to_clear:
+                                new_tile.append((y + 1, x))
+                            else:
+                                new_tile.append((y, x))
+                    tetromino.current_each_tile_pos = new_tile
+        self._running = False
+        time.sleep(COOLDOWN)
+        self._running = True
 
     def render(self):
         self._board = np.zeros((self._height, self._width), dtype=int)
