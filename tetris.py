@@ -9,6 +9,7 @@ WIDTH = 10
 HEIGHT = 20
 DROP_INTERVAL = 1
 CLEARLINE_NUM = 9
+ROTATION_MATRIX = {"CW": [[0, 1], [-1, 0]], "CCW": [[0, -1], [1, 0]]}
 
 PIECES = {
     "L": [(0, 0), (-1, 0), (1, 0), (1, 1)],
@@ -21,9 +22,6 @@ PIECES = {
 }
 
 PIECES_INDEX = {piece: index for index, piece in enumerate(PIECES.keys(), start=1)}
-
-CW = [[0, 1], [-1, 0]]
-CCW = [[0, -1], [1, 0]]
 
 OFFSET_JLSTZ = {
     "0>1": [(0, 0), (-1, 0), (-1, 1), (0, -2), (-1, -2)],
@@ -50,25 +48,30 @@ OFFSET_I = {
 
 class Bag:
     def __init__(self):
-        self._choices = list(PIECES.keys())
-        self._index = 0
-        self._random_pieces = []
-        self.random_pieces()
+        self._available_pieces = list(PIECES.keys())
+        self._total_pieces = len(self._available_pieces)
+        self._current_index = 0
+        self._shuffled_pieces = []
+        self._shuffle_pieces()
 
-    def random_pieces(self):
-        self._index = 0
-        self._random_pieces = []
-        for _ in range(len(PIECES)):
-            choose_piece = random.choice(self._choices)
-            self._choices.remove(choose_piece)
-            self._random_pieces.append(choose_piece)
-        self._choices = list(PIECES.keys())
+    def _shuffle_pieces(self):
+        self._current_index = 0
+        self._shuffled_pieces = []
+
+        for _ in range(self._total_pieces):
+            choose_piece = random.choice(self._available_pieces)
+            self._available_pieces.remove(choose_piece)
+            self._shuffled_pieces.append(choose_piece)
+
+        self._available_pieces = list(PIECES.keys())
 
     def choose(self):
-        choose_piece = self._random_pieces[self._index]
-        self._index += 1
-        if self._index == len(self._choices):
-            self.random_pieces()
+        choose_piece = self._shuffled_pieces[self._current_index]
+        
+        self._current_index += 1
+        if self._current_index == self._total_pieces:
+            self._shuffle_pieces()
+
         return choose_piece
 
 
@@ -135,14 +138,14 @@ class Tetromino:
             con_x = x - rotation_point[1]
             con_y = y - rotation_point[0]
             if direction == "rotate-right":
-                con_pos = np.dot(CW, [con_x, con_y])
+                con_pos = np.dot(ROTATION_MATRIX["CW"], [con_x, con_y])
                 final_pos = (
                     rotation_point[0] - int(con_pos[1]),
                     rotation_point[1] - int(con_pos[0]),
                 )
                 new_pos.append(final_pos)
             elif direction == "rotate-left":
-                con_pos = np.dot(CCW, [con_x, con_y])
+                con_pos = np.dot(ROTATION_MATRIX["CCW"], [con_x, con_y])
                 final_pos = (
                     rotation_point[0] - int(con_pos[1]),
                     rotation_point[1] - int(con_pos[0]),
