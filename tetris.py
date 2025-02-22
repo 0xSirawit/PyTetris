@@ -300,31 +300,37 @@ def play_tetris():
 
     last_keys = set()  # Store previously pressed keys
 
-    while True:
-        board.display()
-        current_keys = set()
+    try:
+        while True:
+            board.display()
+            current_keys = set()
 
-        if keyboard.is_pressed("a"):
-            board.move_tetromino(board._current_tetromino, "left")
+            if keyboard.is_pressed("a"):
+                board.move_tetromino(board._current_tetromino, "left")
 
-        if keyboard.is_pressed("d"):
-            board.move_tetromino(board._current_tetromino, "right")
+            if keyboard.is_pressed("d"):
+                board.move_tetromino(board._current_tetromino, "right")
 
-        if keyboard.is_pressed("w"):
-            board.move_tetromino(board._current_tetromino, "down")
+            if keyboard.is_pressed("w"):
+                board.move_tetromino(board._current_tetromino, "down")
 
-        if keyboard.is_pressed("right"):
-            current_keys.add("right")
-            if "right" not in last_keys:
-                board.rotate_tetromino("rotate-right")
+            if keyboard.is_pressed("right"):
+                current_keys.add("right")
+                if "right" not in last_keys:
+                    board.rotate_tetromino("rotate-right")
 
-        if keyboard.is_pressed("left"):
-            current_keys.add("left")
-            if "left" not in last_keys:
-                board.rotate_tetromino("rotate-left")
+            if keyboard.is_pressed("left"):
+                current_keys.add("left")
+                if "left" not in last_keys:
+                    board.rotate_tetromino("rotate-left")
 
-        last_keys = current_keys
-        time.sleep(0.05)
+            last_keys = current_keys
+            time.sleep(0.05)
+
+    except KeyboardInterrupt:
+        board.stop()
+        keyboard.unhook_all()
+        print("\033[?25h")  # Restore cursor visibility
 
 
 if __name__ == "__main__":
