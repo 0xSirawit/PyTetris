@@ -47,14 +47,14 @@ OFFSET_I = {
 
 
 class Bag:
-    def __init__(self):
+    def __init__(self) -> None:
         self._available_pieces = list(PIECES.keys())
         self._total_pieces = len(self._available_pieces)
         self._current_index = 0
         self._shuffled_pieces = []
         self._shuffle_pieces()
 
-    def _shuffle_pieces(self):
+    def _shuffle_pieces(self) -> None:
         self._current_index = 0
         self._shuffled_pieces = []
 
@@ -65,9 +65,9 @@ class Bag:
 
         self._available_pieces = list(PIECES.keys())
 
-    def choose(self):
+    def choose(self) -> str:
         choose_piece = self._shuffled_pieces[self._current_index]
-        
+
         self._current_index += 1
         if self._current_index == self._total_pieces:
             self._shuffle_pieces()
@@ -76,86 +76,75 @@ class Bag:
 
 
 class Tetromino:
-    def __init__(self, piece_type):
+    def __init__(self, piece_type: str) -> None:
         self._piece_type = piece_type
-        self.grid = self.generate()
-        self.current_each_tile_pos = []
-        self.is_set = False
-        self.rotate_pos = 0
+        self._grid = self.generate_coordinate()
+        self._rotate_index = 0
         self.rotate_point = None
+        self.tiles_pos = []
+        self.is_set = False
 
-    def generate(self):
-        size = 4 if self._piece_type == "I" else 3
-        coordinate_map = np.zeros((size, size), dtype=int)
+    def generate_coordinate(self) -> np:
+        if self._piece_type == "I":
+            grid_size = 4
+            coordinate_offset = (2, 0)
+        else:
+            grid_size = 3
+            coordinate_offset = (1, 1)
 
-        for coordinate in PIECES[self._piece_type]:
-            x, y = coordinate
-            if self._piece_type == "I":
-                coordinate_map[y + 2, x] = 1
-            else:
-                coordinate_map[y + 1, x + 1] = 1
+        coordinate_map = np.zeros((grid_size, grid_size), dtype=int)
+        for x, y in PIECES[self._piece_type]:
+            coordinate_map[y + coordinate_offset[0], x + coordinate_offset[1]] = 1
 
         return np.flipud(coordinate_map)
 
-    def rotate_offset(self, board, direction, new_pos):
-        if direction == "rotate-right":
-            next_rotate_pos = (self.rotate_pos + 1) % 4
-        elif direction == "rotate-left":
-            next_rotate_pos = (self.rotate_pos - 1) % 4
+    def rotate_offset(
+        self, board: np, direction: str, new_tiles_pos: list
+    ) -> tuple[int, int] | bool:
+        rotation_step = 1 if direction == "CW" else -1
+        next_rotate_index = (self._rotate_index + rotation_step) % 4
 
         if self._piece_type == "I":
-            offset_data = OFFSET_I[f"{self.rotate_pos}>{next_rotate_pos}"]
+            offset_data = OFFSET_I[f"{self._rotate_index}>{next_rotate_index}"]
         else:
-            offset_data = OFFSET_JLSTZ[f"{self.rotate_pos}>{next_rotate_pos}"]
+            offset_data = OFFSET_JLSTZ[f"{self._rotate_index}>{next_rotate_index}"]
+
         for offset_x, offset_y in offset_data:
-            is_valid_rotate = True
-            for new_tile in new_pos:
-                next_x = new_tile[1] + offset_x
-                next_y = new_tile[0] + offset_y
-                if 0 <= next_x < WIDTH and 0 <= next_y < HEIGHT:
-                    if (
-                        board[next_y, next_x] != 0
-                        and (next_y, next_x) not in self.current_each_tile_pos
-                    ):
-                        is_valid_rotate = False
-                        break
-                else:
-                    is_valid_rotate = False
-                    break
-            if is_valid_rotate:
-                self.rotate_pos = next_rotate_pos
-                return (offset_x, offset_y)
+            if all(
+                0 <= (next_x := new_tile[1] + offset_x) < WIDTH
+                and 0 <= (next_y := new_tile[0] + offset_y) < HEIGHT
+                and (board[next_y, next_x] == 0 or (next_y, next_x) in self.tiles_pos)
+                for new_tile in new_tiles_pos
+            ):
+                self._rotate_index = next_rotate_index
+                return offset_x, offset_y
 
         return False
 
-    def rotate(self, board, direction):
+    def rotate(self, board: np, direction: str) -> None:
         if self._piece_type == "O":
             return
-        new_pos = []
-        rotation_point = self.rotate_point
 
-        for y, x in self.current_each_tile_pos:
-            con_x = x - rotation_point[1]
-            con_y = y - rotation_point[0]
-            if direction == "rotate-right":
-                con_pos = np.dot(ROTATION_MATRIX["CW"], [con_x, con_y])
-                final_pos = (
-                    rotation_point[0] - int(con_pos[1]),
-                    rotation_point[1] - int(con_pos[0]),
-                )
-                new_pos.append(final_pos)
-            elif direction == "rotate-left":
-                con_pos = np.dot(ROTATION_MATRIX["CCW"], [con_x, con_y])
-                final_pos = (
-                    rotation_point[0] - int(con_pos[1]),
-                    rotation_point[1] - int(con_pos[0]),
-                )
-                new_pos.append(final_pos)
+        new_tiles_pos = []
 
-        offset = self.rotate_offset(board, direction, new_pos)
+        for tile_y, tile_x in self.tiles_pos:
+            tile_coordinate_x = tile_x - self.rotate_point[1]
+            tile_coordinate_y = tile_y - self.rotate_point[0]
+            tile_coordinate_rotated = np.dot(
+                ROTATION_MATRIX[direction], [tile_coordinate_x, tile_coordinate_y]
+            )
+
+            tile_position_rotated = (
+                self.rotate_point[0] - int(tile_coordinate_rotated[1]),
+                self.rotate_point[1] - int(tile_coordinate_rotated[0]),
+            )
+            new_tiles_pos.append(tile_position_rotated)
+
+        offset = self.rotate_offset(board, direction, new_tiles_pos)
         if offset:
-            self.current_each_tile_pos = [
-                (y + offset[1], x + offset[0]) for (y, x) in new_pos
+            self.tiles_pos = [
+                (new_tile_y + offset[1], new_tile_x + offset[0])
+                for (new_tile_y, new_tile_x) in new_tiles_pos
             ]
             self.rotate_point = (
                 self.rotate_point[0] + offset[1],
@@ -163,8 +152,12 @@ class Tetromino:
             )
 
     @property
-    def piece_type(self):
+    def piece_type(self) -> str:
         return self._piece_type
+
+    @property
+    def grid(self) -> np:
+        return self._grid
 
 
 class Board:
@@ -197,7 +190,7 @@ class Board:
                     if 0 <= board_y < self._height and 0 <= board_x < self._width:
                         if [i, j] == [1, 1]:
                             tetromino.rotate_point = (board_y, board_x)
-                        tetromino.current_each_tile_pos.append((board_y, board_x))
+                        tetromino.tiles_pos.append((board_y, board_x))
 
         self._tetrominos.append(self._current_tetromino)
         self.render()
@@ -222,15 +215,13 @@ class Board:
 
         dx, dy = direction_map[direction]
         new_positions = []
-        for x, y in tetromino.current_each_tile_pos:
+        for x, y in tetromino.tiles_pos:
             new_positions.append((x + dx, y + dy))
             if (x, y) == tetromino.rotate_point:
                 new_rotate_point = (x + dx, y + dy)
 
-        if self.check_tetromino(
-            new_positions, tetromino.current_each_tile_pos, direction
-        ):
-            tetromino.current_each_tile_pos = new_positions
+        if self.check_tetromino(new_positions, tetromino.tiles_pos, direction):
+            tetromino.tiles_pos = new_positions
             tetromino.rotate_point = new_rotate_point
 
         self.render()
@@ -239,7 +230,7 @@ class Board:
         stat = {i: 0 for i in range(20)}
         for tetromino in self._tetrominos:
             if tetromino.is_set == True:
-                for y, x in tetromino.current_each_tile_pos:
+                for y, x in tetromino.tiles_pos:
                     stat[y] += 1
 
         lines_to_clear = [y for y in stat.keys() if stat[y] == 10]
@@ -252,13 +243,13 @@ class Board:
             for tetromino in self._tetrominos:
                 if tetromino.is_set == True:
                     new_tile = []
-                    for y, x in tetromino.current_each_tile_pos:
+                    for y, x in tetromino.tiles_pos:
                         if y != line_to_clear:
                             if y < line_to_clear:
                                 new_tile.append((y + 1, x))
                             else:
                                 new_tile.append((y, x))
-                    tetromino.current_each_tile_pos = new_tile
+                    tetromino.tiles_pos = new_tile
 
         time.sleep(DROP_INTERVAL)
         return
@@ -266,7 +257,7 @@ class Board:
     def render(self):
         self._board = np.zeros((self._height, self._width), dtype=int)
         for piece in self._tetrominos:
-            for tile in piece.current_each_tile_pos:
+            for tile in piece.tiles_pos:
                 self._board[tile[0], tile[1]] = PIECES_INDEX[piece.piece_type]
 
     def display(self):
@@ -292,7 +283,7 @@ class Board:
     def stop(self):
         self._running = False
 
-    def rotate_tetromino(self, direction):
+    def rotate_tetromino(self, direction: str):
         self._current_tetromino.rotate(self._board, direction)
         self.render()
 
@@ -320,12 +311,12 @@ def play_tetris():
             if keyboard.is_pressed("right"):
                 current_keys.add("right")
                 if "right" not in last_keys:
-                    board.rotate_tetromino("rotate-right")
+                    board.rotate_tetromino("CW")
 
             if keyboard.is_pressed("left"):
                 current_keys.add("left")
                 if "left" not in last_keys:
-                    board.rotate_tetromino("rotate-left")
+                    board.rotate_tetromino("CCW")
 
             last_keys = current_keys
             time.sleep(0.05)
