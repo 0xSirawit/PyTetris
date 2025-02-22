@@ -160,7 +160,7 @@ class Tetromino:
         return self._grid
 
 
-class Board:
+class Tetris:
     def __init__(self, width=WIDTH, height=HEIGHT):
         self._board = np.zeros((height, width), dtype=int)
         self._width = width
@@ -210,19 +210,21 @@ class Board:
                     return False
         return True
 
-    def move_tetromino(self, tetromino, direction):
+    def move_tetromino(self, direction):
         direction_map = {"right": (0, 1), "left": (0, -1), "down": (1, 0)}
 
         dx, dy = direction_map[direction]
         new_positions = []
-        for x, y in tetromino.tiles_pos:
+        for x, y in self._current_tetromino.tiles_pos:
             new_positions.append((x + dx, y + dy))
-            if (x, y) == tetromino.rotate_point:
+            if (x, y) == self._current_tetromino.rotate_point:
                 new_rotate_point = (x + dx, y + dy)
 
-        if self.check_tetromino(new_positions, tetromino.tiles_pos, direction):
-            tetromino.tiles_pos = new_positions
-            tetromino.rotate_point = new_rotate_point
+        if self.check_tetromino(
+            new_positions, self._current_tetromino.tiles_pos, direction
+        ):
+            self._current_tetromino.tiles_pos = new_positions
+            self._current_tetromino.rotate_point = new_rotate_point
 
         self.render()
 
@@ -277,7 +279,7 @@ class Board:
     def drop_tetromino(self):
         while self._running:
             if not self._current_tetromino.is_set:
-                self.move_tetromino(self._current_tetromino, "down")
+                self.move_tetromino("down")
             time.sleep(DROP_INTERVAL)
 
     def stop(self):
@@ -290,39 +292,39 @@ class Board:
 
 def play_tetris():
     os.system("cls" if os.name == "nt" else "clear")
-    board = Board()
+    game = Tetris()
 
     last_keys = set()  # Store previously pressed keys
 
     try:
         while True:
-            board.display()
+            game.display()
             current_keys = set()
 
             if keyboard.is_pressed("a"):
-                board.move_tetromino(board._current_tetromino, "left")
+                game.move_tetromino("left")
 
             if keyboard.is_pressed("d"):
-                board.move_tetromino(board._current_tetromino, "right")
+                game.move_tetromino("right")
 
             if keyboard.is_pressed("w"):
-                board.move_tetromino(board._current_tetromino, "down")
+                game.move_tetromino("down")
 
             if keyboard.is_pressed("right"):
                 current_keys.add("right")
                 if "right" not in last_keys:
-                    board.rotate_tetromino("CW")
+                    game.rotate_tetromino("CW")
 
             if keyboard.is_pressed("left"):
                 current_keys.add("left")
                 if "left" not in last_keys:
-                    board.rotate_tetromino("CCW")
+                    game.rotate_tetromino("CCW")
 
             last_keys = current_keys
             time.sleep(0.05)
 
     except KeyboardInterrupt:
-        board.stop()
+        game.stop()
         keyboard.unhook_all()
         print("\033[?25h")  # Restore cursor visibility
 
