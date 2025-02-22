@@ -161,7 +161,7 @@ class Tetromino:
 
 
 class Tetris:
-    def __init__(self, width=WIDTH, height=HEIGHT):
+    def __init__(self, width=WIDTH, height=HEIGHT) -> None:
         self._board = np.zeros((height, width), dtype=int)
         self._width = width
         self._height = height
@@ -173,12 +173,21 @@ class Tetris:
 
         threading.Timer(DROP_INTERVAL, self.start_drop_thread).start()
 
-    def start_drop_thread(self):
+    def start_drop_thread(self) -> None:
         self.drop_thread = threading.Thread(
             target=self.drop_tetromino, daemon=True
         ).start()
 
-    def spawn_tetromino(self, tetromino, x=3, y=0):
+    def drop_tetromino(self):
+        while self._running:
+            if not self._current_tetromino.is_set:
+                self.move_tetromino("down")
+            time.sleep(DROP_INTERVAL)
+
+    def stop(self):
+        self._running = False
+
+    def spawn_tetromino(self, tetromino: object, x=3, y=0) -> None:
         piece_grid = tetromino.grid
         h, w = piece_grid.shape
 
@@ -195,22 +204,29 @@ class Tetris:
         self._tetrominos.append(self._current_tetromino)
         self.render()
 
-    def check_tetromino(self, new_positions, current_positions, direction):
+    def respawn_tetromino(self) -> None:
+        self._current_tetromino.is_set = True
+        self.clear_line()
+        self._current_tetromino = Tetromino(self._bag.choose())
+        self.spawn_tetromino(self._current_tetromino)
+
+    def check_tetromino(self, new_positions: list, direction: str) -> bool:
         for y, x in new_positions:
-            if (y, x) not in current_positions:
-                if y >= self._height:
-                    self.respawn_tetromino()
-                    return False
-                if not (0 <= y < self._height and 0 <= x < self._width):
-                    return False
-                if y < self._height and direction == "down" and self._board[y, x] != 0:
-                    self.respawn_tetromino()
-                    return False
-                if self._board[y, x] != 0:
-                    return False
+            if (y, x) in self._current_tetromino.tiles_pos:
+                continue
+            if y >= self._height:
+                self.respawn_tetromino()
+                return False
+            if not (0 <= y < self._height and 0 <= x < self._width):
+                return False
+            if y < self._height and direction == "down" and self._board[y, x] != 0:
+                self.respawn_tetromino()
+                return False
+            if self._board[y, x] != 0:
+                return False
         return True
 
-    def move_tetromino(self, direction):
+    def move_tetromino(self, direction: str) -> None:
         direction_map = {"right": (0, 1), "left": (0, -1), "down": (1, 0)}
 
         dx, dy = direction_map[direction]
@@ -220,43 +236,46 @@ class Tetris:
             if (x, y) == self._current_tetromino.rotate_point:
                 new_rotate_point = (x + dx, y + dy)
 
-        if self.check_tetromino(
-            new_positions, self._current_tetromino.tiles_pos, direction
-        ):
+        if self.check_tetromino(new_positions, direction):
             self._current_tetromino.tiles_pos = new_positions
             self._current_tetromino.rotate_point = new_rotate_point
 
         self.render()
 
-    def clear_line(self):
-        stat = {i: 0 for i in range(20)}
+    def clear_line(self) -> None:
+        line_counts = {y: 0 for y in range(20)}
         for tetromino in self._tetrominos:
-            if tetromino.is_set == True:
-                for y, x in tetromino.tiles_pos:
-                    stat[y] += 1
+            if tetromino.is_set:
+                for y, _ in tetromino.tiles_pos:
+                    line_counts[y] += 1
 
-        lines_to_clear = [y for y in stat.keys() if stat[y] == 10]
+        lines_to_clear = [y for y, count in line_counts.items() if count == 10]
         if not lines_to_clear:
             return False
 
-        for line_to_clear in sorted(lines_to_clear):
-            self._board[line_to_clear] = [CLEARLINE_NUM] * self._width
+        for line in sorted(lines_to_clear):
+            self._board[line] = [CLEARLINE_NUM] * self._width
             self.display()
+
             for tetromino in self._tetrominos:
-                if tetromino.is_set == True:
-                    new_tile = []
-                    for y, x in tetromino.tiles_pos:
-                        if y != line_to_clear:
-                            if y < line_to_clear:
-                                new_tile.append((y + 1, x))
+                if tetromino.is_set:
+                    new_tiles_pos = []
+                    for tile_y, tile_x in tetromino.tiles_pos:
+                        if tile_y != line:
+                            if tile_y < line:
+                                new_tiles_pos.append((tile_y + 1, tile_x))
                             else:
-                                new_tile.append((y, x))
-                    tetromino.tiles_pos = new_tile
+                                new_tiles_pos.append((tile_y, tile_x))
+                    tetromino.tiles_pos = new_tiles_pos
 
         time.sleep(DROP_INTERVAL)
         return
 
-    def render(self):
+    def rotate_tetromino(self, direction: str):
+        self._current_tetromino.rotate(self._board, direction)
+        self.render()
+
+    def render(self) -> None:
         self._board = np.zeros((self._height, self._width), dtype=int)
         for piece in self._tetrominos:
             for tile in piece.tiles_pos:
@@ -269,25 +288,6 @@ class Tetris:
         for row in self._board:
             print("".join([str(cell) if cell else "." for cell in row]))
         print(flush=True)
-
-    def respawn_tetromino(self):
-        self._current_tetromino.is_set = True
-        self.clear_line()
-        self._current_tetromino = Tetromino(self._bag.choose())
-        self.spawn_tetromino(self._current_tetromino)
-
-    def drop_tetromino(self):
-        while self._running:
-            if not self._current_tetromino.is_set:
-                self.move_tetromino("down")
-            time.sleep(DROP_INTERVAL)
-
-    def stop(self):
-        self._running = False
-
-    def rotate_tetromino(self, direction: str):
-        self._current_tetromino.rotate(self._board, direction)
-        self.render()
 
 
 def play_tetris():
