@@ -18,6 +18,7 @@ TETROMINO_COLORS = {
     5: [0.4, 0.8, 0.6],
     6: [0.7, 0.6, 0.2],
     7: [0.2, 0.7, 0.5],
+    9: [0, 0, 0],
 }
 
 
@@ -34,12 +35,13 @@ class TetrisBoard(Widget):
         self.game = Tetris(GRID_COLS, GRID_ROWS)
         Clock.schedule_interval(self.redraw, REFRESH_RATE)
         Clock.schedule_interval(self.move_step, MOVE_INTERVAL)
-
-    def redraw(self, *args) -> None:
-        self.canvas.clear()
         with self.canvas:
             Color(1, 1, 1, 0.5)
             self._draw_grid_lines()
+
+    def redraw(self, *args) -> None:
+        self.canvas.remove_group("tetrominos")
+        with self.canvas:
             self._draw_blocks()
 
     def _draw_grid_lines(self) -> None:
@@ -68,6 +70,7 @@ class TetrisBoard(Widget):
                     Rectangle(
                         pos=(col * CELL_SIZE, row * CELL_SIZE),
                         size=(CELL_SIZE, CELL_SIZE),
+                        group="tetrominos",
                     )
 
     def _on_keyboard_closed(self) -> None:
