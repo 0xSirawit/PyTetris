@@ -10,6 +10,16 @@ CELL_SIZE = 60
 REFRESH_RATE = 1 / 30
 MOVE_INTERVAL = 0.05
 
+TETROMINO_COLORS = {
+    1: [0.7, 0.3, 0.2],
+    2: [0.5, 0.7, 0.2],
+    3: [0.7, 0.2, 0.2],
+    4: [0.6, 0.2, 0.6],
+    5: [0.4, 0.8, 0.6],
+    6: [0.7, 0.6, 0.2],
+    7: [0.2, 0.7, 0.5],
+}
+
 
 class TetrisBoard(Widget):
     def __init__(self, **kwargs) -> None:
@@ -47,8 +57,14 @@ class TetrisBoard(Widget):
     def _draw_blocks(self) -> None:
         for row in range(len(self.game.board)):
             for col in range(len(self.game.board[0])):
-                if self.game.board[row, col] != 0:
-                    Color(0, 1, 0, 1)
+                board_value = self.game.board[row, col]
+                if board_value != 0:
+                    Color(
+                        TETROMINO_COLORS[board_value][0],
+                        TETROMINO_COLORS[board_value][1],
+                        TETROMINO_COLORS[board_value][2],
+                        1,
+                    )
                     Rectangle(
                         pos=(col * CELL_SIZE, row * CELL_SIZE),
                         size=(CELL_SIZE, CELL_SIZE),

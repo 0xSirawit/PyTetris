@@ -255,7 +255,7 @@ class Tetris:
 
         for line in sorted(lines_to_clear):
             self._board[line] = [CLEARLINE_NUM] * self._width
-            self.display()
+            # self.display()
 
             for tetromino in self._tetrominos:
                 if tetromino.is_set:
