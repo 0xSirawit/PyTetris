@@ -238,7 +238,8 @@ class Tetris:
 
         if self.check_tetromino(new_positions, direction):
             self._current_tetromino.tiles_pos = new_positions
-            self._current_tetromino.rotate_point = new_rotate_point
+            if new_rotate_point:
+                self._current_tetromino.rotate_point = new_rotate_point
 
         self.render()
 

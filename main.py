@@ -1,6 +1,6 @@
 from kivy.app import App
 from kivy.uix.widget import Widget
-from kivy.graphics import Rectangle, Color, Line
+from kivy.graphics import Rectangle, Color, Line, InstructionGroup
 from kivy.clock import Clock
 from kivy.core.window import Window
 from tetris import Tetris
@@ -28,73 +28,93 @@ class TetrisBoard(Widget):
         self.grid = [[0] * GRID_COLS for _ in range(GRID_ROWS)]
         self.size_hint = (None, None)
         self.size = (GRID_COLS * CELL_SIZE, GRID_ROWS * CELL_SIZE)
-        self.bind(size=self.redraw)
+
+        self._draw_grid_borders()
+        self.grid_lines = InstructionGroup()
+        self.canvas.add(self.grid_lines)
+        self._draw_grid_lines()
+
+        self.game = Tetris(GRID_COLS, GRID_ROWS)
+        self.blocks = [[None] * GRID_COLS for _ in range(GRID_ROWS)]
+
         self._keyboard = Window.request_keyboard(self._on_keyboard_closed, self)
         self._keyboard.bind(on_key_down=self._on_key_down)
         self._keyboard.bind(on_key_up=self._on_key_up)
         self.pressed_keys = set()
         self.handled_keys = set()
-        self.game = Tetris(GRID_COLS, GRID_ROWS)
-        Clock.schedule_interval(self.redraw, REFRESH_RATE)
-        Clock.schedule_interval(self.move_step, MOVE_INTERVAL)
-        with self.canvas:
-            self._draw_grid_lines()
 
-    def redraw(self, *args) -> None:
-        self.canvas.remove_group("tetrominos")
-        with self.canvas:
-            self._draw_grid_borders()
-            self._draw_blocks()
+        Clock.schedule_interval(self.update_board, REFRESH_RATE)
+        Clock.schedule_interval(self.move_step, MOVE_INTERVAL)
 
     def _draw_grid_lines(self) -> None:
-        Color(1, 1, 1, 0.4)
+        self.grid_lines.clear()
+        self.grid_lines.add(Color(1, 1, 1, 0.4))
         for row in range(GRID_ROWS + 1):
-            Line(
-                points=[0, row * CELL_SIZE, GRID_COLS * CELL_SIZE, row * CELL_SIZE],
-                width=1,
+            self.grid_lines.add(
+                Line(
+                    points=[0, row * CELL_SIZE, GRID_COLS * CELL_SIZE, row * CELL_SIZE],
+                    width=1,
+                )
             )
         for col in range(GRID_COLS + 1):
-            Line(
-                points=[col * CELL_SIZE, 0, col * CELL_SIZE, GRID_ROWS * CELL_SIZE],
-                width=1,
+            self.grid_lines.add(
+                Line(
+                    points=[col * CELL_SIZE, 0, col * CELL_SIZE, GRID_ROWS * CELL_SIZE],
+                    width=1,
+                )
             )
 
     def _draw_grid_borders(self) -> None:
-        Color(1, 1, 1, 1)
-
         # Left border
-        Line(points=[self.x, self.y, self.x, self.y + GRID_ROWS * CELL_SIZE], width=2)
+        self.canvas.add(
+            Line(
+                points=[self.x, self.y, self.x, self.y + GRID_ROWS * CELL_SIZE], width=2
+            )
+        )
 
         # Right border
-        Line(
-            points=[
-                self.x + GRID_COLS * CELL_SIZE,
-                self.y,
-                self.x + GRID_COLS * CELL_SIZE,
-                self.y + GRID_ROWS * CELL_SIZE,
-            ],
-            width=2,
+        self.canvas.add(
+            Line(
+                points=[
+                    self.x + GRID_COLS * CELL_SIZE,
+                    self.y,
+                    self.x + GRID_COLS * CELL_SIZE,
+                    self.y + GRID_ROWS * CELL_SIZE,
+                ],
+                width=2,
+            )
         )
 
         # Bottom border
-        Line(points=[self.x, self.y, self.x + GRID_COLS * CELL_SIZE, self.y], width=2)
+        self.canvas.add(
+            Line(
+                points=[self.x, self.y, self.x + GRID_COLS * CELL_SIZE, self.y], width=2
+            )
+        )
 
-    def _draw_blocks(self) -> None:
-        for row in range(len(self.game.board)):
-            for col in range(len(self.game.board[0])):
+    def update_board(self, *args) -> None:
+        for row in range(GRID_ROWS):
+            for col in range(GRID_COLS):
                 board_value = self.game.board[row, col]
-                if board_value != 0:
-                    Color(
-                        TETROMINO_COLORS[board_value][0],
-                        TETROMINO_COLORS[board_value][1],
-                        TETROMINO_COLORS[board_value][2],
-                        1,
-                    )
-                    Rectangle(
+                if board_value != 0 and self.blocks[row][col] is None:
+
+                    rect = Rectangle(
                         pos=(col * CELL_SIZE, row * CELL_SIZE),
                         size=(CELL_SIZE, CELL_SIZE),
-                        group="tetrominos",
                     )
+                    self.blocks[row][col] = rect
+                    self.canvas.add(
+                        Color(
+                            TETROMINO_COLORS[board_value][0],
+                            TETROMINO_COLORS[board_value][1],
+                            TETROMINO_COLORS[board_value][2],
+                            1,
+                        )
+                    )
+                    self.canvas.add(rect)
+                elif board_value == 0 and self.blocks[row][col] is not None:
+                    self.canvas.remove(self.blocks[row][col])
+                    self.blocks[row][col] = None
 
     def _on_keyboard_closed(self) -> None:
         self._keyboard.unbind(on_key_down=self._on_key_down)
