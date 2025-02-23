@@ -289,6 +289,10 @@ class Tetris:
             print("".join([str(cell) if cell else "." for cell in row]))
         print(flush=True)
 
+    @property
+    def board(self):
+        return np.flipud(self._board)
+
 
 def play_tetris():
     os.system("cls" if os.name == "nt" else "clear")
