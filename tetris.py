@@ -173,6 +173,7 @@ class Tetris:
         self._total_clear_line = 0
         self._level = level
         self._level_progression = 0
+        self._score = 0
         self._drop_interval = self.cal_drop_interval(level)
         threading.Timer(self._drop_interval, self.start_drop_thread).start()
 
@@ -193,6 +194,17 @@ class Tetris:
                 caled_drop_interval = (DROP_INIT_INTERVAL / 14) * 5
 
         return caled_drop_interval
+
+    def cal_score(self, level: int, num_line: int) -> int:
+        if num_line == 1:
+            score = level * 40
+        if num_line == 2:
+            score = level * 100
+        if num_line == 3:
+            score = level * 300
+        if num_line == 4:
+            score = level * 1200
+        return score
 
     def start_drop_thread(self) -> None:
         self.drop_thread = threading.Thread(
@@ -291,12 +303,14 @@ class Tetris:
                     tetromino.tiles_pos = new_tiles_pos
 
         # time.sleep(self._drop_interval)
-        self._total_clear_line += len(lines_to_clear)
-        self._level_progression += len(lines_to_clear)
+        lines_to_clear_amount = len(lines_to_clear)
+        self._total_clear_line += lines_to_clear_amount
+        self._level_progression += lines_to_clear_amount
         if self._level_progression >= 10:
             self._level += 1
             self._level_progression = self._level_progression % 10
         self._drop_interval = self.cal_drop_interval(self._level)
+        self._score += self.cal_score(self._level, lines_to_clear_amount)
         return
 
     def rotate_tetromino(self, direction: str):
@@ -328,6 +342,10 @@ class Tetris:
     @property
     def level(self):
         return self._level
+
+    @property
+    def score(self):
+        return self._score
 
 
 def play_tetris():
