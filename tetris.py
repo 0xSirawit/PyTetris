@@ -170,6 +170,7 @@ class Tetris:
         self._current_tetromino = Tetromino(self._bag.choose())
         self._running = True
         self.spawn_tetromino(self._current_tetromino)
+        self._total_clear_line = 0
 
         threading.Timer(DROP_INTERVAL, self.start_drop_thread).start()
 
@@ -270,6 +271,7 @@ class Tetris:
                     tetromino.tiles_pos = new_tiles_pos
 
         time.sleep(DROP_INTERVAL)
+        self._total_clear_line += len(lines_to_clear)
         return
 
     def rotate_tetromino(self, direction: str):
@@ -293,6 +295,10 @@ class Tetris:
     @property
     def board(self):
         return np.flipud(self._board)
+
+    @property
+    def total_clear_line(self):
+        return self._total_clear_line
 
 
 def play_tetris():

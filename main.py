@@ -7,6 +7,7 @@ from kivy.uix.label import Label
 from kivy.core.text import LabelBase
 from kivy.clock import Clock
 from kivy.core.window import Window
+from kivy.properties import NumericProperty
 from tetris import Tetris
 
 LabelBase.register(name="Jersey10", fn_regular="./font/Jersey10-Regular.ttf")
@@ -29,6 +30,8 @@ TETROMINO_COLORS = {
 
 
 class TetrisBoard(Widget):
+    lines_cleared = NumericProperty(0)
+
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self.grid = [[0] * GRID_COLS for _ in range(GRID_ROWS)]
@@ -41,6 +44,7 @@ class TetrisBoard(Widget):
         self._draw_grid_lines()
 
         self.game = Tetris(GRID_COLS, GRID_ROWS)
+        self.total_clear_line = self.game.total_clear_line
         self.blocks = [[None] * GRID_COLS for _ in range(GRID_ROWS)]
 
         self._keyboard = Window.request_keyboard(self._on_keyboard_closed, self)
@@ -120,6 +124,12 @@ class TetrisBoard(Widget):
                 elif board_value == 0 and self.blocks[row][col] is not None:
                     self.canvas.remove(self.blocks[row][col])
                     self.blocks[row][col] = None
+        self.check_lines()
+
+    def check_lines(self):
+        cleared_lines = self.game.total_clear_line
+        if cleared_lines != self.lines_cleared:
+            self.lines_cleared = cleared_lines
 
     def _on_keyboard_closed(self) -> None:
         self._keyboard.unbind(on_key_down=self._on_key_down)
@@ -194,10 +204,15 @@ class TetrisApp(App):
         self.info_panel.add_widget(self.level_container)
         self.info_panel.add_widget(self.score_container)
 
+        self.tetris_board.bind(lines_cleared=self.update_lines)
+
         root.add_widget(self.tetris_board)
         root.add_widget(self.info_panel)
 
         return root
+
+    def update_lines(self, instance, value):
+        self.lines_value.text = str(value)
 
 
 if __name__ == "__main__":
