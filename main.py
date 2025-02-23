@@ -26,6 +26,8 @@ class TetrisBoard(Widget):
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self.grid = [[0] * GRID_COLS for _ in range(GRID_ROWS)]
+        self.size_hint = (None, None)
+        self.size = (GRID_COLS * CELL_SIZE, GRID_ROWS * CELL_SIZE)
         self.bind(size=self.redraw)
         self._keyboard = Window.request_keyboard(self._on_keyboard_closed, self)
         self._keyboard.bind(on_key_down=self._on_key_down)
@@ -36,15 +38,16 @@ class TetrisBoard(Widget):
         Clock.schedule_interval(self.redraw, REFRESH_RATE)
         Clock.schedule_interval(self.move_step, MOVE_INTERVAL)
         with self.canvas:
-            Color(1, 1, 1, 0.5)
             self._draw_grid_lines()
 
     def redraw(self, *args) -> None:
         self.canvas.remove_group("tetrominos")
         with self.canvas:
+            self._draw_grid_borders()
             self._draw_blocks()
 
     def _draw_grid_lines(self) -> None:
+        Color(1, 1, 1, 0.4)
         for row in range(GRID_ROWS + 1):
             Line(
                 points=[0, row * CELL_SIZE, GRID_COLS * CELL_SIZE, row * CELL_SIZE],
@@ -55,6 +58,26 @@ class TetrisBoard(Widget):
                 points=[col * CELL_SIZE, 0, col * CELL_SIZE, GRID_ROWS * CELL_SIZE],
                 width=1,
             )
+
+    def _draw_grid_borders(self) -> None:
+        Color(1, 1, 1, 1)
+
+        # Left border
+        Line(points=[self.x, self.y, self.x, self.y + GRID_ROWS * CELL_SIZE], width=2)
+
+        # Right border
+        Line(
+            points=[
+                self.x + GRID_COLS * CELL_SIZE,
+                self.y,
+                self.x + GRID_COLS * CELL_SIZE,
+                self.y + GRID_ROWS * CELL_SIZE,
+            ],
+            width=2,
+        )
+
+        # Bottom border
+        Line(points=[self.x, self.y, self.x + GRID_COLS * CELL_SIZE, self.y], width=2)
 
     def _draw_blocks(self) -> None:
         for row in range(len(self.game.board)):
