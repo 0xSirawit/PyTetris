@@ -12,6 +12,7 @@ from tetris import Tetris
 
 LabelBase.register(name="Jersey10", fn_regular="./font/Jersey10-Regular.ttf")
 
+SCREEN_RESOLUTION = (2880, 1800)
 GRID_COLS, GRID_ROWS = 10, 20
 CELL_SIZE = 70
 REFRESH_RATE = 1 / 30
@@ -205,7 +206,10 @@ class TetrisApp(App):
 
     def build(self) -> TetrisBoard:
         Window.fullscreen = "auto"
-        init_pos = (1000, 200)
+        init_pos = (
+            (((SCREEN_RESOLUTION[0] - (GRID_COLS * CELL_SIZE)) / 2) - 80),
+            (((SCREEN_RESOLUTION[1] - (GRID_ROWS * CELL_SIZE)) / 2)),
+        )
 
         self.tetris_board = TetrisBoard(init_pos)
         self.info_panel = BoxLayout(
