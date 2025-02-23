@@ -1,9 +1,15 @@
 from kivy.app import App
 from kivy.uix.widget import Widget
 from kivy.graphics import Rectangle, Color, Line, InstructionGroup
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.floatlayout import FloatLayout
+from kivy.uix.label import Label
+from kivy.core.text import LabelBase
 from kivy.clock import Clock
 from kivy.core.window import Window
 from tetris import Tetris
+
+LabelBase.register(name="Jersey10", fn_regular="./font/Jersey10-Regular.ttf")
 
 GRID_COLS, GRID_ROWS = 10, 20
 CELL_SIZE = 60
@@ -97,12 +103,10 @@ class TetrisBoard(Widget):
             for col in range(GRID_COLS):
                 board_value = self.game.board[row, col]
                 if board_value != 0 and self.blocks[row][col] is None:
-
                     rect = Rectangle(
                         pos=(col * CELL_SIZE, row * CELL_SIZE),
                         size=(CELL_SIZE, CELL_SIZE),
                     )
-                    self.blocks[row][col] = rect
                     self.canvas.add(
                         Color(
                             TETROMINO_COLORS[board_value][0],
@@ -111,6 +115,7 @@ class TetrisBoard(Widget):
                             1,
                         )
                     )
+                    self.blocks[row][col] = rect
                     self.canvas.add(rect)
                 elif board_value == 0 and self.blocks[row][col] is not None:
                     self.canvas.remove(self.blocks[row][col])
@@ -148,8 +153,51 @@ class TetrisBoard(Widget):
 
 
 class TetrisApp(App):
+    def create_label_pair(self, text: str, value: str) -> tuple[BoxLayout, Label]:
+        container = BoxLayout(
+            orientation="vertical", size_hint=(None, None), spacing=10
+        )
+        label = Label(
+            text=text,
+            font_size=64,
+            font_name="Jersey10",
+        )
+        value_label = Label(
+            text=value,
+            font_size=48,
+            font_name="Jersey10",
+        )
+        container.add_widget(label)
+        container.add_widget(value_label)
+        return container, value_label
+
     def build(self) -> TetrisBoard:
-        return TetrisBoard()
+        root = FloatLayout()
+
+        self.tetris_board = TetrisBoard()
+        self.info_panel = BoxLayout(
+            orientation="vertical",
+            spacing=80,
+            size_hint=(None, None),
+            size=(400, 300),
+            pos=(
+                self.tetris_board.width + 80,
+                100,
+            ),
+        )
+
+        self.lines_container, self.lines_value = self.create_label_pair("LINES", "0")
+        self.level_container, self.level_value = self.create_label_pair("LEVEL", "1")
+        self.score_container, self.score_value = self.create_label_pair("SCORE", "0")
+
+        self.info_panel.add_widget(self.lines_container)
+        self.info_panel.add_widget(self.level_container)
+        self.info_panel.add_widget(self.score_container)
+
+        root.add_widget(self.tetris_board)
+        root.add_widget(self.info_panel)
+
+        return root
 
 
 if __name__ == "__main__":
