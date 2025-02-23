@@ -31,6 +31,7 @@ TETROMINO_COLORS = {
 
 class TetrisBoard(Widget):
     lines_cleared = NumericProperty(0)
+    level = NumericProperty(0)
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -45,6 +46,7 @@ class TetrisBoard(Widget):
 
         self.game = Tetris(GRID_COLS, GRID_ROWS)
         self.total_clear_line = self.game.total_clear_line
+        self.level = self.game.level
         self.blocks = [[None] * GRID_COLS for _ in range(GRID_ROWS)]
 
         self._keyboard = Window.request_keyboard(self._on_keyboard_closed, self)
@@ -124,12 +126,15 @@ class TetrisBoard(Widget):
                 elif board_value == 0 and self.blocks[row][col] is not None:
                     self.canvas.remove(self.blocks[row][col])
                     self.blocks[row][col] = None
-        self.check_lines()
+        self.checks()
 
-    def check_lines(self):
+    def checks(self):
         cleared_lines = self.game.total_clear_line
+        level = self.game.level
         if cleared_lines != self.lines_cleared:
             self.lines_cleared = cleared_lines
+        if level != self.level:
+            self.level = level
 
     def _on_keyboard_closed(self) -> None:
         self._keyboard.unbind(on_key_down=self._on_key_down)
@@ -205,6 +210,7 @@ class TetrisApp(App):
         self.info_panel.add_widget(self.score_container)
 
         self.tetris_board.bind(lines_cleared=self.update_lines)
+        self.tetris_board.bind(level=self.update_levels)
 
         root.add_widget(self.tetris_board)
         root.add_widget(self.info_panel)
@@ -213,6 +219,9 @@ class TetrisApp(App):
 
     def update_lines(self, instance, value):
         self.lines_value.text = str(value)
+
+    def update_levels(self, instance, value):
+        self.level_value.text = str(value)
 
 
 if __name__ == "__main__":
