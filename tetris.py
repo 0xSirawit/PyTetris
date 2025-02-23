@@ -7,7 +7,7 @@ import random
 
 WIDTH = 10
 HEIGHT = 20
-DROP_INTERVAL = 1
+DROP_INIT_INTERVAL = 1
 CLEARLINE_NUM = 9
 ROTATION_MATRIX = {"CW": [[0, 1], [-1, 0]], "CCW": [[0, -1], [1, 0]]}
 
@@ -161,7 +161,7 @@ class Tetromino:
 
 
 class Tetris:
-    def __init__(self, width=WIDTH, height=HEIGHT) -> None:
+    def __init__(self, width=WIDTH, height=HEIGHT, level: int = 1) -> None:
         self._board = np.zeros((height, width), dtype=int)
         self._width = width
         self._height = height
@@ -170,8 +170,29 @@ class Tetris:
         self._current_tetromino = Tetromino(self._bag.choose())
         self._running = True
         self.spawn_tetromino(self._current_tetromino)
+        self._total_clear_line = 0
+        self._level = level
+        self._level_progression = 0
+        self._drop_interval = self.cal_drop_interval(level)
+        threading.Timer(self._drop_interval, self.start_drop_thread).start()
 
-        threading.Timer(DROP_INTERVAL, self.start_drop_thread).start()
+    def cal_drop_interval(self, level: int) -> float:
+        caled_drop_interval = 1
+        if self._level <= 10:
+            caled_drop_interval = (DROP_INIT_INTERVAL / 14) * (15 - self._level)
+        else:
+            if self._level >= 13:
+                caled_drop_interval = (DROP_INIT_INTERVAL / 14) * 4
+            if self._level >= 16:
+                caled_drop_interval = (DROP_INIT_INTERVAL / 14) * 3
+            if self._level >= 19:
+                caled_drop_interval = (DROP_INIT_INTERVAL / 14) * 2
+            if self._level >= 29:
+                caled_drop_interval = (DROP_INIT_INTERVAL / 14) * 1
+            else:
+                caled_drop_interval = (DROP_INIT_INTERVAL / 14) * 5
+
+        return caled_drop_interval
 
     def start_drop_thread(self) -> None:
         self.drop_thread = threading.Thread(
@@ -182,7 +203,7 @@ class Tetris:
         while self._running:
             if not self._current_tetromino.is_set:
                 self.move_tetromino("down")
-            time.sleep(DROP_INTERVAL)
+            time.sleep(self._drop_interval)
 
     def stop(self):
         self._running = False
@@ -238,7 +259,8 @@ class Tetris:
 
         if self.check_tetromino(new_positions, direction):
             self._current_tetromino.tiles_pos = new_positions
-            self._current_tetromino.rotate_point = new_rotate_point
+            if new_rotate_point:
+                self._current_tetromino.rotate_point = new_rotate_point
 
         self.render()
 
@@ -255,7 +277,7 @@ class Tetris:
 
         for line in sorted(lines_to_clear):
             self._board[line] = [CLEARLINE_NUM] * self._width
-            self.display()
+            # self.display()
 
             for tetromino in self._tetrominos:
                 if tetromino.is_set:
@@ -268,7 +290,13 @@ class Tetris:
                                 new_tiles_pos.append((tile_y, tile_x))
                     tetromino.tiles_pos = new_tiles_pos
 
-        time.sleep(DROP_INTERVAL)
+        # time.sleep(self._drop_interval)
+        self._total_clear_line += len(lines_to_clear)
+        self._level_progression += len(lines_to_clear)
+        if self._level_progression >= 10:
+            self._level += 1
+            self._level_progression = self._level_progression % 10
+        self._drop_interval = self.cal_drop_interval(self._level)
         return
 
     def rotate_tetromino(self, direction: str):
@@ -288,6 +316,18 @@ class Tetris:
         for row in self._board:
             print("".join([str(cell) if cell else "." for cell in row]))
         print(flush=True)
+
+    @property
+    def board(self):
+        return np.flipud(self._board)
+
+    @property
+    def total_clear_line(self):
+        return self._total_clear_line
+
+    @property
+    def level(self):
+        return self._level
 
 
 def play_tetris():
