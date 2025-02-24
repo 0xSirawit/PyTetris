@@ -12,8 +12,9 @@ from tetris import Tetris
 
 LabelBase.register(name="Jersey10", fn_regular="./font/Jersey10-Regular.ttf")
 
+SCREEN_RESOLUTION = (2880, 1800)
 GRID_COLS, GRID_ROWS = 10, 20
-CELL_SIZE = 60
+CELL_SIZE = 70
 REFRESH_RATE = 1 / 30
 MOVE_INTERVAL = 0.05
 
@@ -28,25 +29,30 @@ TETROMINO_COLORS = {
     9: [0, 0, 0],
 }
 
+Window.clearcolor = (0.1, 0.1, 0.1, 1)
+
 
 class TetrisBoard(Widget):
     lines_cleared = NumericProperty(0)
     level = NumericProperty(0)
+    score = NumericProperty(0)
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, init_pos, **kwargs) -> None:
         super().__init__(**kwargs)
         self.grid = [[0] * GRID_COLS for _ in range(GRID_ROWS)]
         self.size_hint = (None, None)
         self.size = (GRID_COLS * CELL_SIZE, GRID_ROWS * CELL_SIZE)
+        self.pos = init_pos
 
         self._draw_grid_borders()
         self.grid_lines = InstructionGroup()
         self.canvas.add(self.grid_lines)
-        self._draw_grid_lines()
+        self._draw_grid_lines(init_pos)
 
         self.game = Tetris(GRID_COLS, GRID_ROWS)
         self.total_clear_line = self.game.total_clear_line
         self.level = self.game.level
+        self.score = self.game.score
         self.blocks = [[None] * GRID_COLS for _ in range(GRID_ROWS)]
 
         self._keyboard = Window.request_keyboard(self._on_keyboard_closed, self)
@@ -58,20 +64,31 @@ class TetrisBoard(Widget):
         Clock.schedule_interval(self.update_board, REFRESH_RATE)
         Clock.schedule_interval(self.move_step, MOVE_INTERVAL)
 
-    def _draw_grid_lines(self) -> None:
+    def _draw_grid_lines(self, init_pos: tuple = (0, 0)) -> None:
+        x, y = init_pos
         self.grid_lines.clear()
         self.grid_lines.add(Color(1, 1, 1, 0.4))
         for row in range(GRID_ROWS + 1):
             self.grid_lines.add(
                 Line(
-                    points=[0, row * CELL_SIZE, GRID_COLS * CELL_SIZE, row * CELL_SIZE],
+                    points=[
+                        x,
+                        y + row * CELL_SIZE,
+                        x + GRID_COLS * CELL_SIZE,
+                        y + row * CELL_SIZE,
+                    ],
                     width=1,
                 )
             )
         for col in range(GRID_COLS + 1):
             self.grid_lines.add(
                 Line(
-                    points=[col * CELL_SIZE, 0, col * CELL_SIZE, GRID_ROWS * CELL_SIZE],
+                    points=[
+                        x + col * CELL_SIZE,
+                        y,
+                        x + col * CELL_SIZE,
+                        y + GRID_ROWS * CELL_SIZE,
+                    ],
                     width=1,
                 )
             )
@@ -110,7 +127,10 @@ class TetrisBoard(Widget):
                 board_value = self.game.board[row, col]
                 if board_value != 0 and self.blocks[row][col] is None:
                     rect = Rectangle(
-                        pos=(col * CELL_SIZE, row * CELL_SIZE),
+                        pos=(
+                            self.pos[0] + col * CELL_SIZE,
+                            self.pos[1] + row * CELL_SIZE,
+                        ),
                         size=(CELL_SIZE, CELL_SIZE),
                     )
                     self.canvas.add(
@@ -131,10 +151,14 @@ class TetrisBoard(Widget):
     def checks(self):
         cleared_lines = self.game.total_clear_line
         level = self.game.level
+        score = self.game.score
+
         if cleared_lines != self.lines_cleared:
             self.lines_cleared = cleared_lines
         if level != self.level:
             self.level = level
+        if score != self.score:
+            self.score = score
 
     def _on_keyboard_closed(self) -> None:
         self._keyboard.unbind(on_key_down=self._on_key_down)
@@ -170,16 +194,16 @@ class TetrisBoard(Widget):
 class TetrisApp(App):
     def create_label_pair(self, text: str, value: str) -> tuple[BoxLayout, Label]:
         container = BoxLayout(
-            orientation="vertical", size_hint=(None, None), spacing=10
+            orientation="vertical", size_hint=(None, None), spacing=64
         )
         label = Label(
             text=text,
-            font_size=64,
+            font_size=72,
             font_name="Jersey10",
         )
         value_label = Label(
             text=value,
-            font_size=48,
+            font_size=64,
             font_name="Jersey10",
         )
         container.add_widget(label)
@@ -187,17 +211,21 @@ class TetrisApp(App):
         return container, value_label
 
     def build(self) -> TetrisBoard:
-        root = FloatLayout()
+        Window.fullscreen = "auto"
+        init_pos = (
+            (((SCREEN_RESOLUTION[0] - (GRID_COLS * CELL_SIZE)) / 2) - 120),
+            (((SCREEN_RESOLUTION[1] - (GRID_ROWS * CELL_SIZE)) / 2)),
+        )
 
-        self.tetris_board = TetrisBoard()
+        self.tetris_board = TetrisBoard(init_pos)
         self.info_panel = BoxLayout(
             orientation="vertical",
-            spacing=80,
+            spacing=120,
             size_hint=(None, None),
             size=(400, 300),
             pos=(
-                self.tetris_board.width + 80,
-                100,
+                self.tetris_board.width + init_pos[0] + 120,
+                init_pos[1] + 100,
             ),
         )
 
@@ -211,7 +239,9 @@ class TetrisApp(App):
 
         self.tetris_board.bind(lines_cleared=self.update_lines)
         self.tetris_board.bind(level=self.update_levels)
+        self.tetris_board.bind(score=self.update_scores)
 
+        root = FloatLayout()
         root.add_widget(self.tetris_board)
         root.add_widget(self.info_panel)
 
@@ -222,6 +252,9 @@ class TetrisApp(App):
 
     def update_levels(self, instance, value):
         self.level_value.text = str(value)
+
+    def update_scores(self, instance, value):
+        self.score_value.text = str(value)
 
 
 if __name__ == "__main__":
