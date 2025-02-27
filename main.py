@@ -145,14 +145,7 @@ class TetrisBoard(Widget):
                         ),
                         size=(CELL_SIZE, CELL_SIZE),
                     )
-                    self.canvas.add(
-                        Color(
-                            TETROMINO_COLORS[board_value][0],
-                            TETROMINO_COLORS[board_value][1],
-                            TETROMINO_COLORS[board_value][2],
-                            1,
-                        )
-                    )
+                    self.canvas.add(Color(*TETROMINO_COLORS[board_value], 1))
                     self.blocks[row][col] = rect
                     self.canvas.add(rect)
                 elif board_value == 0 and self.blocks[row][col] is not None:
