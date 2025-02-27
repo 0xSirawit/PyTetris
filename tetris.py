@@ -53,6 +53,7 @@ class Bag:
         self._current_index = 0
         self._shuffled_pieces = []
         self._shuffle_pieces()
+        self._next_piece = None
 
     def _shuffle_pieces(self) -> None:
         self._current_index = 0
@@ -67,12 +68,19 @@ class Bag:
 
     def choose(self) -> str:
         choose_piece = self._shuffled_pieces[self._current_index]
-
         self._current_index += 1
-        if self._current_index == self._total_pieces:
+
+        if self._current_index < self._total_pieces:
+            self._next_piece = self._shuffled_pieces[self._current_index]
+        else:
             self._shuffle_pieces()
+            self._next_piece = self._shuffled_pieces[0]
 
         return choose_piece
+
+    @property
+    def next_piece(self) -> str:
+        return self._next_piece
 
 
 class Tetromino:
@@ -346,6 +354,10 @@ class Tetris:
     @property
     def score(self):
         return self._score
+
+    @property
+    def bag(self):
+        return self._bag
 
 
 def play_tetris():
