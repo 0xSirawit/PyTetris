@@ -30,13 +30,13 @@ TETROMINO_COLORS = {
 }
 
 TETROMINO_SHAPES = {
-    "T": [[0, 1, 0, 0], [1, 1, 1, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
-    "I": [[0, 0, 0, 0], [1, 1, 1, 1], [0, 0, 0, 0], [0, 0, 0, 0]],
-    "O": [[0, 1, 1, 0], [0, 1, 1, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
     "L": [[0, 0, 1, 0], [1, 1, 1, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
-    "J": [[1, 0, 0, 0], [1, 1, 1, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
     "S": [[0, 1, 1, 0], [1, 1, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
     "Z": [[1, 1, 0, 0], [0, 1, 1, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
+    "T": [[0, 1, 0, 0], [1, 1, 1, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
+    "J": [[1, 0, 0, 0], [1, 1, 1, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
+    "O": [[0, 1, 1, 0], [0, 1, 1, 0], [0, 0, 0, 0], [0, 0, 0, 0]],
+    "I": [[0, 0, 0, 0], [1, 1, 1, 1], [0, 0, 0, 0], [0, 0, 0, 0]],
 }
 
 Window.clearcolor = (0.1, 0.1, 0.1, 1)
@@ -219,8 +219,24 @@ class NextTetrominoWidget(Widget):
         self.canvas.clear()
         self.blocks.clear()
 
+        match tetromino:
+            case "L":
+                color = TETROMINO_COLORS[1]
+            case "S":
+                color = TETROMINO_COLORS[2]
+            case "Z":
+                color = TETROMINO_COLORS[3]
+            case "T":
+                color = TETROMINO_COLORS[4]
+            case "J":
+                color = TETROMINO_COLORS[5]
+            case "O":
+                color = TETROMINO_COLORS[6]
+            case "I":
+                color = TETROMINO_COLORS[7]
+
         with self.canvas:
-            Color(1, 1, 1, 1)
+            Color(*color, 1)
             for row in range(4):
                 for col in range(4):
                     if piece_shape[row][col]:
