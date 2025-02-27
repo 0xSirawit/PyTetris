@@ -304,6 +304,11 @@ class TetrisApp(App):
         root.add_widget(self.tetris_board)
         root.add_widget(self.info_panel)
 
+        Clock.schedule_once(
+            lambda dt: self.next_tetromino_widget.update_tetromino(
+                self.tetris_board.game.bag.next_piece
+            )
+        )
         return root
 
     def update_lines(self, instance, value):
