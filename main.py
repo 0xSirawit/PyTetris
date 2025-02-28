@@ -12,9 +12,9 @@ from tetris import Tetris
 
 LabelBase.register(name="Jersey10", fn_regular="./font/Jersey10-Regular.ttf")
 
-SCREEN_RESOLUTION = (2880, 1800)
+SCREEN_RESOLUTION = (1920, 1080)
 GRID_COLS, GRID_ROWS = 10, 20
-CELL_SIZE = 70
+CELL_SIZE = 40
 REFRESH_RATE = 1 / 30
 MOVE_INTERVAL = 0.05
 
