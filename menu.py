@@ -22,11 +22,11 @@ class MenuScreen(Screen):
         self.setup_ui()
 
     def setup_ui(self):
-        layout = BoxLayout(orientation="vertical", padding=10, spacing=10)
+        layout = BoxLayout(orientation="vertical", padding=[10, 32], spacing=32)
 
         title = Label(
             text="Tetris Game",
-            font_size=BASE_FONT_SIZE * 1.5,
+            font_size=BASE_FONT_SIZE * 2,
             font_name="Jersey10",
             size_hint=(1, 0.1),
         )
