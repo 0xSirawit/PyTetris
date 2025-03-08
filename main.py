@@ -4,10 +4,12 @@ from kivy.graphics import Rectangle, Color, Line, InstructionGroup
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.label import Label
+from kivy.uix.button import Button
 from kivy.core.text import LabelBase
 from kivy.clock import Clock
 from kivy.core.window import Window
-from kivy.properties import NumericProperty, StringProperty
+from kivy.properties import NumericProperty, StringProperty, BooleanProperty
+from kivy.uix.modalview import ModalView
 from tetris import Tetris
 
 LabelBase.register(name="Jersey10", fn_regular="./font/Jersey10-Regular.ttf")
@@ -48,6 +50,7 @@ class TetrisBoard(Widget):
     level = NumericProperty(0)
     score = NumericProperty(0)
     next_tetromino = StringProperty("")
+    game_over = BooleanProperty(False)
 
     def __init__(self, init_pos, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -66,6 +69,7 @@ class TetrisBoard(Widget):
         self.level = self.game.level
         self.score = self.game.score
         self.next_tetromino = self.game.bag.next_piece
+        self.game_over = self.game.is_game_over
         self.blocks = [[None] * GRID_COLS for _ in range(GRID_ROWS)]
 
         self._keyboard = Window.request_keyboard(self._on_keyboard_closed, self)
@@ -159,7 +163,10 @@ class TetrisBoard(Widget):
         level = self.game.level
         score = self.game.score
         next_tetromino = self.game.bag.next_piece
+        game_over = self.game.is_game_over
 
+        if self.game_over != game_over:
+            self.game_over = game_over
         if cleared_lines != self.lines_cleared:
             self.lines_cleared = cleared_lines
         if level != self.level:
@@ -198,6 +205,90 @@ class TetrisBoard(Widget):
 
         if "q" in self.pressed_keys:
             exit()
+
+    def reset_game(self):
+        self.game = Tetris(GRID_COLS, GRID_ROWS)
+        self.total_clear_line = self.game.total_clear_line
+        self.level = self.game.level
+        self.score = self.game.score
+        self.next_tetromino = self.game.bag.next_piece
+        self.game_over = self.game.is_game_over
+        for row in range(GRID_ROWS):
+            for col in range(GRID_COLS):
+                if self.blocks[row][col] is not None:
+                    self.canvas.remove(self.blocks[row][col])
+                    self.blocks[row][col] = None
+
+
+class GameOverScreen(ModalView):
+    def __init__(self, score, lines, level, **kwargs):
+        super().__init__(**kwargs)
+        self.size_hint = (0.5, 0.6)
+        self.auto_dismiss = False
+        self.background_color = (0.1, 0.1, 0.1, 0.9)
+
+        # Main layout
+        layout = BoxLayout(orientation="vertical", padding=20, spacing=20)
+
+        # Game Over title
+        game_over_label = Label(
+            text="GAME OVER", font_size=100, font_name="Jersey10", size_hint=(1, 0.2)
+        )
+
+        # Stats layout
+        stats_layout = BoxLayout(orientation="vertical", spacing=20, size_hint=(1, 0.5))
+
+        score_label = Label(text=f"SCORE: {score}", font_size=72, font_name="Jersey10")
+
+        lines_label = Label(
+            text=f"LINES CLEARED: {lines}", font_size=72, font_name="Jersey10"
+        )
+
+        level_label = Label(text=f"LEVEL: {level}", font_size=72, font_name="Jersey10")
+
+        stats_layout.add_widget(score_label)
+        stats_layout.add_widget(lines_label)
+        stats_layout.add_widget(level_label)
+
+        # Buttons layout
+        buttons_layout = BoxLayout(
+            orientation="horizontal", spacing=30, size_hint=(1, 0.3), padding=(50, 10)
+        )
+
+        restart_button = Button(
+            text="RESTART",
+            font_size=64,
+            font_name="Jersey10",
+            background_color=(0.1, 0.7, 0.3, 1),
+            size_hint=(0.5, 1),
+        )
+        restart_button.bind(on_release=self.restart_game)
+
+        exit_button = Button(
+            text="EXIT",
+            font_size=64,
+            font_name="Jersey10",
+            background_color=(1, 0.3, 0.3, 1),
+            size_hint=(0.5, 1),
+        )
+        exit_button.bind(on_release=self.exit_game)
+
+        buttons_layout.add_widget(restart_button)
+        buttons_layout.add_widget(exit_button)
+
+        # Add all elements to the main layout
+        layout.add_widget(game_over_label)
+        layout.add_widget(stats_layout)
+        layout.add_widget(buttons_layout)
+
+        self.add_widget(layout)
+
+    def restart_game(self, instance):
+        App.get_running_app().tetris_board.reset_game()
+        self.dismiss()
+
+    def exit_game(self, instance):
+        exit()
 
 
 class NextTetrominoWidget(Widget):
@@ -309,6 +400,7 @@ class TetrisApp(App):
         self.tetris_board.bind(level=self.update_levels)
         self.tetris_board.bind(score=self.update_scores)
         self.tetris_board.bind(next_tetromino=self.update_next_tetromino)
+        self.tetris_board.bind(game_over=self.show_game_over)
 
         root = FloatLayout()
         root.add_widget(self.tetris_board)
@@ -332,6 +424,13 @@ class TetrisApp(App):
 
     def update_next_tetromino(self, instance, value):
         self.next_tetromino_widget.update_tetromino(value)
+
+    def show_game_over(self, instance, value):
+        if value:
+            game_over_screen = GameOverScreen(
+                score=instance.score, lines=instance.lines_cleared, level=instance.level
+            )
+            game_over_screen.open()
 
 
 if __name__ == "__main__":

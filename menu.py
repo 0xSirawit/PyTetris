@@ -31,9 +31,11 @@ class MenuScreen(Screen):
             size_hint=(1, 0.1),
         )
 
-        btn_start = self.create_button("Start Game", (0.2, 0.6, 1, 1), self.start_game)
+        btn_start = self.create_button(
+            "Start Game", (0.1, 0.7, 0.3, 1), self.start_game
+        )
         btn_high_scores = self.create_button(
-            "High Scores", (0.1, 0.7, 0.3, 1), self.show_high_scores
+            "High Scores", (0.2, 0.6, 1, 1), self.show_high_scores
         )
         btn_exit = self.create_button(
             "Exit", (1, 0.3, 0.3, 1), lambda _: App.get_running_app().stop()
