@@ -4,6 +4,9 @@ from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.boxlayout import BoxLayout
 
+
+FONT_PATH = "font/Jersey10-Regular.ttf"  
+
 class HowToPlayScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -19,9 +22,9 @@ class HowToPlayScreen(Screen):
         ]
         
         for text in instructions:
-            layout.add_widget(Label(text=text, font_size='20sp'))
+            layout.add_widget(Label(text=text, font_size='20sp', font_name=FONT_PATH))  # Apply font
         
-        back_button = Button(text='Back to Menu', size_hint=(None, None), size=(200, 50))
+        back_button = Button(text='Back to Menu', size_hint=(None, None), size=(200, 50), font_name=FONT_PATH)
         back_button.bind(on_press=self.go_back)
         layout.add_widget(back_button)
         
@@ -35,8 +38,8 @@ class MenuScreen(Screen):
         super().__init__(**kwargs)
         layout = BoxLayout(orientation='vertical', padding=20, spacing=10)
         
-        title = Label(text='Tetris Game', font_size='30sp')
-        how_to_play_button = Button(text='How to Play', size_hint=(None, None), size=(200, 50))
+        title = Label(text='Tetris Game', font_size='30sp', font_name=FONT_PATH)  # Apply font
+        how_to_play_button = Button(text='How to Play', size_hint=(None, None), size=(200, 50), font_name=FONT_PATH)
         how_to_play_button.bind(on_press=self.go_to_how_to_play)
         
         layout.add_widget(title)
