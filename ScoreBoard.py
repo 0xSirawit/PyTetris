@@ -1,10 +1,11 @@
 import json
 import os
+from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
 from kivy.uix.button import Button
-from kivy.uix.popup import Popup
-from kivy.uix.screenmanager import Screen
+from kivy.uix.screenmanager import Screen, ScreenManager
+from kivy.core.window import Window
 
 SCOREBOARD_FILE = "scoreboard.json"
 
@@ -62,4 +63,14 @@ class ScoreBoardScreen(Screen):
         self.add_widget(layout)
 
     def close(self, instance):
-        self.manager.current = "menu_screen"
+        App.get_running_app().stop()
+
+class ScoreBoardApp(App):
+    def build(self):
+        Window.fullscreen = True
+        sm = ScreenManager()
+        sm.add_widget(ScoreBoardScreen(name="scoreboard_screen"))
+        return sm
+
+if __name__ == "__main__":
+    ScoreBoardApp().run()
