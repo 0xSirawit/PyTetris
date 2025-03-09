@@ -179,7 +179,7 @@ class Tetris:
         self._running = True
         self.is_game_over = False
         self.spawn_tetromino(self._current_tetromino)
-        self._total_clear_line = 0
+        self._total_clear_line = 38
         self._level = level
         self._level_progression = 0
         self._score = 0
