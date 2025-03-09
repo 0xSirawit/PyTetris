@@ -244,7 +244,7 @@ class Tetris:
                         tetromino.tiles_pos.append((board_y, board_x))
                         if self._board[board_y, board_x] != 0:
                             self._running = False
-                            self._board = np.ones((20, 10), dtype=int)
+                            self._board = np.zeros((20, 10), dtype=int)
                             self.is_game_over = True
 
         self._tetrominos.append(self._current_tetromino)
