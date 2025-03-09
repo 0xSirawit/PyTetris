@@ -5,7 +5,6 @@ from kivy.uix.label import Label
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.gridlayout import GridLayout
 from kivy.core.text import LabelBase
-from kivy.uix.button import Button
 from kivy.core.window import Window
 
 LabelBase.register(name="Jersey10", fn_regular="./font/Jersey10-Regular.ttf")
@@ -13,7 +12,7 @@ LabelBase.register(name="Jersey10", fn_regular="./font/Jersey10-Regular.ttf")
 class ScoreBoard(BoxLayout):
     def __init__(self, normal_mode_file, line40_mode_file, **kwargs):
         super().__init__(**kwargs)
-        self.orientation = 'horizontal'
+        self.orientation = 'horizontal'  # เปลี่ยนเป็นแนวตั้ง
         self.normal_mode_file = normal_mode_file
         self.line40_mode_file = line40_mode_file
         self.normal_mode_scores = self.load_scores(normal_mode_file)
@@ -28,9 +27,9 @@ class ScoreBoard(BoxLayout):
             return []
 
     def display_scores(self):
-        # สร้าง BoxLayout สำหรับทั้งสองตาราง
-        normal_mode_box = BoxLayout(orientation='vertical', size_hint=(6,6))  # ใช้ 100% ของความกว้าง
-        line40_mode_box = BoxLayout(orientation='vertical', size_hint=(6,6))  # ใช้ 100% ของความกว้าง
+        # โหมด Normal Mode
+        normal_mode_box = BoxLayout(orientation='vertical', size_hint_y=0.5)  # ขนาดครึ่งหน้าจอ
+        line40_mode_box = BoxLayout(orientation='vertical', size_hint_y=0.5)  # ขนาดครึ่งหน้าจอ
 
         # โหมด Normal Mode
         normal_mode_label = Label(text="Normal Mode Scores:", font_name="Jersey10", font_size=24, size_hint_y=None, height=40, color=(1, 1, 1, 1))
@@ -42,7 +41,7 @@ class ScoreBoard(BoxLayout):
             normal_mode_grid.add_widget(Label(text=f"Player {idx+1}:", font_name="Jersey10", font_size=20))
             normal_mode_grid.add_widget(Label(text=str(score), font_name="Jersey10", font_size=20))
         
-        normal_mode_scroll = ScrollView(size_hint=(1, None), size=(self.width, 200))  # เพิ่มขนาดให้เต็มหน้าจอในแนวตั้ง
+        normal_mode_scroll = ScrollView(size_hint=(1, None), size=(self.width, 800))  # ขนาดเต็มหน้าจอในแนวตั้ง
         normal_mode_scroll.add_widget(normal_mode_grid)
         normal_mode_box.add_widget(normal_mode_scroll)
 
@@ -56,11 +55,11 @@ class ScoreBoard(BoxLayout):
             line40_mode_grid.add_widget(Label(text=f"Player {idx+1}:", font_name="Jersey10", font_size=20))
             line40_mode_grid.add_widget(Label(text=str(score), font_name="Jersey10", font_size=20))
         
-        line40_mode_scroll = ScrollView(size_hint=(1, None), size=(self.width, 200))  # เพิ่มขนาดให้เต็มหน้าจอในแนวตั้ง
+        line40_mode_scroll = ScrollView(size_hint=(1, None), size=(self.width, 800)) 
         line40_mode_scroll.add_widget(line40_mode_grid)
         line40_mode_box.add_widget(line40_mode_scroll)
 
-        # เพิ่มทั้งสองตารางลงใน BoxLayout หลัก
+        
         self.add_widget(normal_mode_box)
         self.add_widget(line40_mode_box)
 
