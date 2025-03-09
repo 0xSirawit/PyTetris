@@ -177,8 +177,9 @@ class Tetris:
         self._bag = Bag()
         self._current_tetromino = Tetromino(self._bag.choose())
         self._running = True
+        self.is_game_over = False
         self.spawn_tetromino(self._current_tetromino)
-        self._total_clear_line = 0
+        self._total_clear_line = 38
         self._level = level
         self._level_progression = 0
         self._score = 0
@@ -241,6 +242,10 @@ class Tetris:
                         if [i, j] == [1, 1]:
                             tetromino.rotate_point = (board_y, board_x)
                         tetromino.tiles_pos.append((board_y, board_x))
+                        if self._board[board_y, board_x] != 0:
+                            self._running = False
+                            self._board = np.zeros((20, 10), dtype=int)
+                            self.is_game_over = True
 
         self._tetrominos.append(self._current_tetromino)
         self.render()
@@ -268,6 +273,8 @@ class Tetris:
         return True
 
     def move_tetromino(self, direction: str) -> None:
+        if self.is_game_over:
+            return
         direction_map = {"right": (0, 1), "left": (0, -1), "down": (1, 0)}
 
         dx, dy = direction_map[direction]
@@ -322,6 +329,8 @@ class Tetris:
         return
 
     def rotate_tetromino(self, direction: str):
+        if self.is_game_over:
+            return
         self._current_tetromino.rotate(self._board, direction)
         self.render()
 
