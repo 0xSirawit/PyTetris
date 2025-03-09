@@ -13,12 +13,7 @@ class HowToPlayScreen(Screen):
        
         
         instructions = [
-            "\nTetris Controls:\n",
-            "W - Soft Drop",
-            "A - Move Left",
-            "D - Move Right",
-            "Arrow Right - Rotate Clockwise",
-            "Arrow Left - Rotate Counterclockwise"
+           
         ]
         
         for text in instructions:
