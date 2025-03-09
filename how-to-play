@@ -52,8 +52,8 @@ class MenuScreen(Screen):
 class TetrisApp(App):
     def build(self):
         sm = ScreenManager()
-        sm.add_widget(MenuScreen(name='Menu'))
-        sm.add_widget(HowToPlayScreen(name='How_to_play'))
+        sm.add_widget(MenuScreen(name='menu'))
+        sm.add_widget(HowToPlayScreen(name='how_to_play'))
         return sm
 
 if __name__ == '__main__':
