@@ -38,7 +38,7 @@ class MenuScreen(Screen):
         super().__init__(**kwargs)
         layout = BoxLayout(orientation='vertical', padding=20, spacing=10)
         
-        title = Label(text='Tetris Game', font_size='30sp', font_name=FONT_PATH)  # Apply font
+        title = Label(text='Tetris Game', font_size='30sp', font_name=FONT_PATH) 
         how_to_play_button = Button(text='How to Play', size_hint=(None, None), size=(200, 50), font_name=FONT_PATH)
         how_to_play_button.bind(on_press=self.go_to_how_to_play)
         
