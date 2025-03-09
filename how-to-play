@@ -10,7 +10,7 @@ FONT_PATH = "font/Jersey10-Regular.ttf"
 class HowToPlayScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        layout = BoxLayout(orientation='vertical', padding=20, spacing=10)
+       
         
         instructions = [
             "\nTetris Controls:\n",
