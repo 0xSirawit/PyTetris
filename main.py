@@ -3,12 +3,12 @@ from kivy.uix.button import Button
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
 from kivy.core.text import LabelBase
-from kivy.uix.popup import Popup
 from kivy.uix.screenmanager import Screen, ScreenManager
 
 from kivy.core.window import Window
 from screen.modeClassic import TetrisApp
 from screen.mode40Line import Tetris40LineApp
+from screen.HowToPlay import HowToPlayScreen
 
 SCREEN_RESOLUTION = (2880, 1800)
 GRID_COLS, GRID_ROWS = 10, 20
@@ -35,7 +35,7 @@ class MenuScreen(Screen):
         btn_start = self.create_button("CLASSIC", (0.1, 0.7, 0.3, 1), self.start_game)
         btn_40line = self.create_button("40 LINES", (0.1, 1, 0.3, 1), self.start_40line)
         btn_high_scores = self.create_button(
-            "HOW TO PLAY", (0.2, 0.6, 1, 1), self.show_high_scores
+            "HOW TO PLAY", (0.2, 0.6, 1, 1), self.how_to_play
         )
         btn_exit = self.create_button(
             "EXIT", (1, 0.3, 0.3, 1), lambda _: App.get_running_app().stop()
@@ -51,7 +51,7 @@ class MenuScreen(Screen):
     def create_button(self, text, background_color, callback):
         button = Button(
             text=text,
-            font_size=BASE_FONT_SIZE,
+            font_size=BASE_FONT_SIZE * 1.1,
             font_name="Jersey10",
             size_hint=(0.3, 0.1),
             background_color=background_color,
@@ -67,20 +67,8 @@ class MenuScreen(Screen):
     def start_40line(self, instance):
         self.manager.current = "game_40line_screen"
 
-    def show_high_scores(self, instance):
-        content = BoxLayout(orientation="vertical")
-        content.add_widget(
-            Label(
-                text="High Scores:\n1. Player1 - 10000\n2. Player2 - 8000\n3. Player3 - 6000",
-                font_size=24,
-            )
-        )
-        close_btn = Button(text="Close", size_hint=(1, 0.2))
-        content.add_widget(close_btn)
-
-        popup = Popup(title="High Scores", content=content, size_hint=(0.8, 0.8))
-        close_btn.bind(on_press=popup.dismiss)
-        popup.open()
+    def how_to_play(self, instance):
+        self.manager.current = "how_to_play_screen"
 
 
 class GameScreen(Screen):
@@ -126,6 +114,7 @@ class TetrisMenuApp(App):
         sm.add_widget(MenuScreen(name="menu_screen"))
         sm.add_widget(GameScreen(name="game_screen"))
         sm.add_widget(Game40LineScreen(name="game_40line_screen"))
+        sm.add_widget(HowToPlayScreen(name="how_to_play_screen"))
         return sm
 
 
