@@ -11,6 +11,7 @@ from kivy.core.window import Window
 from kivy.properties import NumericProperty, StringProperty, BooleanProperty
 from kivy.uix.modalview import ModalView
 from tetris import Tetris
+import time
 
 LabelBase.register(name="Jersey10", fn_regular="./font/Jersey10-Regular.ttf")
 
@@ -72,6 +73,10 @@ class TetrisBoard(Widget):
         self.next_tetromino = self.game.bag.next_piece
         self.game_over = self.game.is_game_over
         self.blocks = [[None] * GRID_COLS for _ in range(GRID_ROWS)]
+
+        # Initialize the timer
+        self.start_time = time.time()
+        self.elapsed_time = 0
 
         self._keyboard = Window.request_keyboard(self._on_keyboard_closed, self)
         self._keyboard.bind(on_key_down=self._on_key_down)
@@ -159,6 +164,10 @@ class TetrisBoard(Widget):
                     self.blocks[row][col] = None
         self.checks()
 
+        # Update the elapsed time if the game is still running
+        if not self.game_over and not self.game_win:
+            self.elapsed_time = time.time() - self.start_time
+
     def checks(self):
         cleared_lines = self.game.total_clear_line
         level = self.game.level
@@ -218,6 +227,9 @@ class TetrisBoard(Widget):
         self.score = self.game.score
         self.next_tetromino = self.game.bag.next_piece
         self.game_over = self.game.is_game_over
+        self.game_win = False
+        self.start_time = time.time()
+        self.elapsed_time = 0
         for row in range(GRID_ROWS):
             for col in range(GRID_COLS):
                 if self.blocks[row][col] is not None:
@@ -226,7 +238,7 @@ class TetrisBoard(Widget):
 
 
 class GameResultScreen(ModalView):
-    def __init__(self, title, title_color, score, lines, level, **kwargs):
+    def __init__(self, title, title_color, score, lines, level, time_taken, **kwargs):
         super().__init__(**kwargs)
         self.size_hint = (0.5, 0.6)
         self.auto_dismiss = False
@@ -252,10 +264,14 @@ class GameResultScreen(ModalView):
             text=f"LINES CLEARED: {lines}", font_size=72, font_name="Jersey10"
         )
         level_label = Label(text=f"LEVEL: {level}", font_size=72, font_name="Jersey10")
+        time_label = Label(
+            text=f"TIME: {time_taken:.2f} seconds", font_size=72, font_name="Jersey10"
+        )
 
         stats_layout.add_widget(score_label)
         stats_layout.add_widget(lines_label)
         stats_layout.add_widget(level_label)
+        stats_layout.add_widget(time_label)  # Add the time label
 
         # Buttons layout
         buttons_layout = BoxLayout(
@@ -299,25 +315,27 @@ class GameResultScreen(ModalView):
 
 
 class GameOverScreen(GameResultScreen):
-    def __init__(self, score, lines, level, **kwargs):
+    def __init__(self, score, lines, level, time_taken, **kwargs):
         super().__init__(
             title="GAME OVER",
             title_color=(1, 0.3, 0.3, 1),  # Red color
             score=score,
             lines=lines,
             level=level,
+            time_taken=time_taken,
             **kwargs,
         )
 
 
 class WinScreen(GameResultScreen):
-    def __init__(self, score, lines, level, **kwargs):
+    def __init__(self, score, lines, level, time_taken, **kwargs):
         super().__init__(
             title="YOU WIN",
             title_color=(0.1, 0.8, 0.1, 1),  # Green color
             score=score,
             lines=lines,
             level=level,
+            time_taken=time_taken,
             **kwargs,
         )
 
@@ -460,14 +478,20 @@ class Tetris40LineApp(App):
     def show_game_over(self, instance, value):
         if value:
             game_over_screen = GameOverScreen(
-                score=instance.score, lines=instance.lines_cleared, level=instance.level
+                score=instance.score,
+                lines=instance.lines_cleared,
+                level=instance.level,
+                time_taken=instance.elapsed_time,
             )
             game_over_screen.open()
 
     def show_game_win(self, instance, value):
         if value:
             win_screen = WinScreen(
-                score=instance.score, lines=instance.lines_cleared, level=instance.level
+                score=instance.score,
+                lines=instance.lines_cleared,
+                level=instance.level,
+                time_taken=instance.elapsed_time,
             )
             win_screen.open()
 

@@ -292,6 +292,7 @@ class GameOverScreen(ModalView):
         self.dismiss()
 
     def exit_game(self, instance):
+        self.dismiss()
         exit()
 
 
