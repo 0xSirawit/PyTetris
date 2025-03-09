@@ -1,3 +1,5 @@
 __pycache__/
 *.pyc
 *.pyo
+line40_mode_scores.json
+normal_mode_scores.json
